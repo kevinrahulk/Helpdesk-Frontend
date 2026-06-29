@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid2"
@@ -10,74 +10,140 @@ import MenuItem from "@mui/material/MenuItem"
 import Divider from "@mui/material/Divider"
 import Alert from "@mui/material/Alert"
 import Chip from "@mui/material/Chip"
-import { ArrowBack, AutoAwesome, Send } from "@mui/icons-material"
+import Dialog from "@mui/material/Dialog"
+import DialogTitle from "@mui/material/DialogTitle"
+import DialogContent from "@mui/material/DialogContent"
+import DialogActions from "@mui/material/DialogActions"
+import { ArrowBack, AutoAwesome, Send, Add } from "@mui/icons-material"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import Button from "../../components/Button/Button"
 import AIPanel, { AISection } from "../../components/AIPanel/AIPanel"
-import { CATEGORIES, PRIORITY, STATUS } from "../../data/mockData"
+import { useTickets } from "../../../hooks/useTickets"
+import { useCategories, useAI } from "../../../hooks/useDomainHooks"
+
+const PRIORITIES = [
+  { label: "Low", value: "low" },
+  { label: "Medium", value: "medium" },
+  { label: "High", value: "high" },
+  { label: "Critical", value: "critical" },
+]
+// ── Create Category Dialog ────────────────────────────────────────────────────
+function CreateCategoryDialog({ open, onClose, onCreate, loading, error }) {
+  const [name, setName] = useState("")
+  const [desc, setDesc] = useState("")
+  const [nameError, setNameError] = useState("")
+
+  useEffect(() => {
+    if (!open) { setName(""); setDesc(""); setNameError("") }
+  }, [open])
+
+  const handleCreate = () => {
+    if (!name.trim()) { setNameError("Category name is required"); return }
+    onCreate({ name: name.trim(), description: desc.trim() || undefined, is_active: true })
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ fontWeight: 700 }}>Create New Category</DialogTitle>
+      <DialogContent>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+          <TextField
+            label="Category Name"
+            fullWidth
+            value={name}
+            onChange={(e) => { setName(e.target.value); if (nameError) setNameError("") }}
+            error={!!nameError}
+            helperText={nameError}
+            size="small"
+            autoFocus
+          />
+          <TextField
+            label="Description (optional)"
+            fullWidth
+            multiline
+            rows={2}
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            size="small"
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <Button variant="outlined" onClick={onClose}>Cancel</Button>
+        <Button loading={loading} onClick={handleCreate} startIcon={<Add />}>
+          Create
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
+}
 
 export default function CreateTicket() {
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [aiLoading, setAiLoading] = useState(false)
-  const [aiSuggestions, setAiSuggestions] = useState(null)
+  const { createTicket, mutating, mutateError } = useTickets()
+  const { categories, fetch: fetchCategories, createCategory, mutating: catMutating, mutateError: catMutateError } = useCategories()
+  const { suggestion, suggestionLoading, suggestionError, getSuggestion, clearSuggestion } = useAI()
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "",
-    priority: PRIORITY.MEDIUM,
+    category_id: "",
+    priority: "Medium",
   })
-
   const [errors, setErrors] = useState({})
+  const [createCatOpen, setCreateCatOpen] = useState(false)
+
+  useEffect(() => {
+    fetchCategories()
+    return () => clearSuggestion()
+  }, [fetchCategories, clearSuggestion])
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData({ ...formData, [name]: value })
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" })
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
   }
 
   const validateForm = () => {
     const newErrors = {}
     if (!formData.title.trim()) newErrors.title = "Title is required"
     if (!formData.description.trim()) newErrors.description = "Description is required"
-    if (!formData.category) newErrors.category = "Category is required"
+    if (!formData.category_id) newErrors.category_id = "Category is required"
     return newErrors
   }
 
   const handleAnalyzeWithAI = () => {
     if (!formData.title.trim() || !formData.description.trim()) {
       setErrors({
-        title: formData.title.trim() ? "" : "Title is required",
-        description: formData.description.trim() ? "" : "Description is required",
+        title: formData.title.trim() ? "" : "Title is required to analyze",
+        description: formData.description.trim() ? "" : "Description is required to analyze",
       })
       return
     }
+    getSuggestion({ title: formData.title, description: formData.description })
+  }
 
-    setAiLoading(true)
-    // Simulate AI analysis
-    setTimeout(() => {
-      setAiSuggestions({
-        category: "Network/VPN",
-        priority: PRIORITY.HIGH,
-        summary:
-          "User is experiencing VPN connectivity issues. The description mentions multiple connection attempts and reinstallation attempts, suggesting a persistent configuration or infrastructure problem.",
-      })
-      setAiLoading(false)
-    }, 1500)
+  const handleCreateCategory = async (payload) => {
+    const result = await createCategory(payload)
+    if (result?.success && result.category) {
+      setFormData((prev) => ({ ...prev, category_id: result.category.id }))
+      setCreateCatOpen(false)
+      fetchCategories()
+    }
   }
 
   const handleApplySuggestions = () => {
-    if (aiSuggestions) {
-      setFormData({
-        ...formData,
-        category: aiSuggestions.category,
-        priority: aiSuggestions.priority,
-      })
-      setAiSuggestions(null)
-    }
+    if (!suggestion) return
+    const matchedCat = categories.find(
+      (c) => c.name?.toLowerCase() === suggestion.suggested_category?.toLowerCase(),
+    )
+    setFormData((prev) => ({
+      ...prev,
+      category_id: matchedCat?.id ?? prev.category_id,
+      priority: suggestion.suggested_priority ?? prev.priority,
+    }))
+    clearSuggestion()
   }
 
   const handleSubmit = async (e) => {
@@ -87,26 +153,31 @@ export default function CreateTicket() {
       setErrors(newErrors)
       return
     }
-
-    setLoading(true)
-    // Simulate submission
-    setTimeout(() => {
-      setLoading(false)
-      navigate("/tickets?status=Open")
-    }, 1000)
+    const payload = {
+      title: formData.title,
+      description: formData.description,
+      category_id: formData.category_id,
+      priority: formData.priority.toLocaleLowerCase(),
+      ...(suggestion?.suggestion_id && { ai_suggestion_id: suggestion.suggestion_id }),
+    }
+    const result = await createTicket(payload)
+    if (result.success) navigate("/tickets?status=open")
   }
 
   return (
-    <Box>
+    <><Box>
       <PageHeader
         title="Create Ticket"
         subtitle="Report a new issue to get support"
-        actions={
-          <Button variant="outlined" size="sm" startIcon={<ArrowBack />} onClick={() => navigate("/tickets")}>
-            Back
-          </Button>
-        }
-      />
+        actions={<Button variant="outlined" size="sm" startIcon={<ArrowBack />} onClick={() => navigate("/tickets")}>
+          Back
+        </Button>} />
+
+      {mutateError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {mutateError}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 8 }}>
@@ -117,7 +188,6 @@ export default function CreateTicket() {
                   Issue Details
                 </Typography>
 
-                {/* Title */}
                 <Box sx={{ mb: 2.5 }}>
                   <TextField
                     fullWidth
@@ -130,15 +200,9 @@ export default function CreateTicket() {
                     helperText={errors.title}
                     multiline
                     rows={2}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 1,
-                      },
-                    }}
-                  />
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }} />
                 </Box>
 
-                {/* Description */}
                 <Box sx={{ mb: 2.5 }}>
                   <TextField
                     fullWidth
@@ -151,12 +215,7 @@ export default function CreateTicket() {
                     helperText={errors.description}
                     multiline
                     rows={6}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 1,
-                      },
-                    }}
-                  />
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }} />
                 </Box>
 
                 <Divider sx={{ my: 3 }} />
@@ -171,23 +230,26 @@ export default function CreateTicket() {
                       fullWidth
                       select
                       label="Category"
-                      name="category"
-                      value={formData.category}
+                      name="category_id"
+                      value={formData.category_id}
                       onChange={handleChange}
-                      error={!!errors.category}
-                      helperText={errors.category}
+                      error={!!errors.category_id}
+                      helperText={errors.category_id}
                       size="small"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 1,
-                        },
-                      }}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                     >
-                      {CATEGORIES.map((cat) => (
-                        <MenuItem key={cat} value={cat}>
-                          {cat}
+                      {categories.map((cat) => (
+                        <MenuItem key={cat.id} value={cat.id}>
+                          {cat.name}
                         </MenuItem>
                       ))}
+                      <Divider />
+                      <MenuItem
+                        onClick={(e) => { e.stopPropagation(); setCreateCatOpen(true) }}
+                        sx={{ color: "primary.main", fontWeight: 600, gap: 1 }}
+                      >
+                        <Add fontSize="small" /> Create new category
+                      </MenuItem>
                     </TextField>
                   </Grid>
 
@@ -200,16 +262,10 @@ export default function CreateTicket() {
                       value={formData.priority}
                       onChange={handleChange}
                       size="small"
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 1,
-                        },
-                      }}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 1 } }}
                     >
-                      {[PRIORITY.LOW, PRIORITY.MEDIUM, PRIORITY.HIGH, PRIORITY.CRITICAL].map((p) => (
-                        <MenuItem key={p} value={p}>
-                          {p}
-                        </MenuItem>
+                      {PRIORITIES.map((p) => (
+                        <MenuItem key={p.value} value={p.value}>{p.label}</MenuItem>
                       ))}
                     </TextField>
                   </Grid>
@@ -217,9 +273,8 @@ export default function CreateTicket() {
 
                 <Divider sx={{ my: 3 }} />
 
-                {/* Submit Button */}
                 <Box sx={{ display: "flex", gap: 1.5 }}>
-                  <Button type="submit" loading={loading} startIcon={<Send />}>
+                  <Button type="submit" loading={mutating} startIcon={<Send />}>
                     Create Ticket
                   </Button>
                   <Button variant="outlined" onClick={() => navigate("/tickets")}>
@@ -231,45 +286,52 @@ export default function CreateTicket() {
           </Card>
         </Grid>
 
-        {/* AI Assistant Sidebar */}
         <Grid size={{ xs: 12, md: 4 }}>
-          <AIPanel title="AI Assistant" loading={aiLoading}>
-            {!aiSuggestions && (
+          <AIPanel title="AI Assistant" loading={suggestionLoading}>
+            {suggestionError && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {suggestionError}
+              </Alert>
+            )}
+
+            {!suggestion && (
               <Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Fill in your issue details above, then click the button below to let AI analyze and suggest the best category and priority for your ticket.
+                  Fill in your issue details above, then click below to let AI analyze and suggest the best category and priority.
                 </Typography>
                 <Button
                   fullWidth
                   variant="outlined"
                   startIcon={<AutoAwesome />}
                   onClick={handleAnalyzeWithAI}
-                  disabled={!formData.title.trim() || !formData.description.trim()}
+                  disabled={!formData.title.trim() || !formData.description.trim() || suggestionLoading}
                 >
                   Analyze Issue
                 </Button>
               </Box>
             )}
 
-            {aiSuggestions && (
+            {suggestion && (
               <Box>
-                <AISection label="Summary">{aiSuggestions.summary}</AISection>
+                <AISection label="Summary">{suggestion.summary}</AISection>
 
                 <AISection label="Suggested Category">
-                  <Chip label={aiSuggestions.category} color="primary" variant="outlined" />
+                  <Chip label={suggestion.suggested_category} color="primary" variant="outlined" />
                 </AISection>
 
                 <AISection label="Suggested Priority">
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <Chip label={aiSuggestions.priority} color="error" variant="outlined" />
-                  </Box>
+                  <Chip label={suggestion.suggested_priority} color="error" variant="outlined" />
                 </AISection>
+
+                {suggestion.first_fix && (
+                  <AISection label="First Fix">{suggestion.first_fix}</AISection>
+                )}
 
                 <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
                   <Button size="sm" fullWidth onClick={handleApplySuggestions}>
                     Apply
                   </Button>
-                  <Button size="sm" fullWidth variant="outlined" onClick={() => setAiSuggestions(null)}>
+                  <Button size="sm" fullWidth variant="outlined" onClick={() => clearSuggestion()}>
                     Dismiss
                   </Button>
                 </Box>
@@ -294,6 +356,11 @@ export default function CreateTicket() {
           </Card>
         </Grid>
       </Grid>
-    </Box>
+    </Box><CreateCategoryDialog
+        open={createCatOpen}
+        onClose={() => setCreateCatOpen(false)}
+        onCreate={handleCreateCategory}
+        loading={catMutating}
+        error={catMutateError} /></>
   )
 }

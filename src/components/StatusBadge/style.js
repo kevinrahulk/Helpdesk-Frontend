@@ -1,15 +1,14 @@
-import { STATUS, PRIORITY } from "../../data/mockData"
 import { statusColors, priorityColors } from "../../theme/tokens"
 
 // Map a ticket status string to its color config for both light & dark modes.
 export function statusStyle(status, mode = "light") {
   const isLight = mode === "light"
   const map = {
-    [STATUS.OPEN]: statusColors.open,
-    [STATUS.IN_PROGRESS]: statusColors.inProgress,
-    [STATUS.WAITING]: statusColors.waiting,
-    [STATUS.RESOLVED]: statusColors.resolved,
-    [STATUS.CLOSED]: statusColors.closed,
+    "Open": statusColors.open,
+    "In Progress": statusColors.inProgress,
+    "Waiting for User": statusColors.waiting,
+    "Resolved": statusColors.resolved,
+    "Closed": statusColors.closed,
   }
   const c = map[status] || statusColors.closed
   return {
@@ -21,10 +20,10 @@ export function statusStyle(status, mode = "light") {
 export function priorityStyle(priority, mode = "light") {
   const isLight = mode === "light"
   const map = {
-    [PRIORITY.LOW]: priorityColors.low,
-    [PRIORITY.MEDIUM]: priorityColors.medium,
-    [PRIORITY.HIGH]: priorityColors.high,
-    [PRIORITY.CRITICAL]: priorityColors.critical,
+    "Low": priorityColors.low,
+    "Medium": priorityColors.medium,
+    "High": priorityColors.high,
+    "Critical": priorityColors.critical,
   }
   const c = map[priority] || priorityColors.medium
   return { color: isLight ? c.light : c.dark }

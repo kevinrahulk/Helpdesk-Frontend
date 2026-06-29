@@ -115,6 +115,23 @@ export const updateUserStatus = createAsyncThunk(
 )
 
 /**
+ * Delete (deactivate) a user account (Admin only).
+ * Calls PATCH /users/:id/status with is_active=false.
+ * @param {string} userId - UUID
+ */
+export const deleteUser = createAsyncThunk(
+  "users/deleteUser",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apiClient.patch(`/users/${userId}/status`, { is_active: false })
+      return data.data // UserResponse
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.detail ?? "Failed to delete user.")
+    }
+  },
+)
+
+/**
  * Fetch all active agents with their open ticket workload counts (Admin only).
  * Returns AgentWorkload[] { id, full_name, email, open_ticket_count }
  */
@@ -270,6 +287,25 @@ const usersSlice = createSlice({
         if (idx >= 0) state.items[idx] = user
       })
       .addCase(updateUserStatus.rejected, (state, action) => {
+        state.mutating = false
+        state.mutateError = action.payload
+      })
+
+    // ── deleteUser ────────────────────────────────────────────────────────
+    builder
+      .addCase(deleteUser.pending, (state) => {
+        state.mutating = true
+        state.mutateError = null
+      })
+      .addCase(deleteUser.fulfilled, (state, action) => {
+        state.mutating = false
+        const user = action.payload
+        // Update user in list (now is_active=false)
+        state.usersById[user.id] = user
+        const idx = state.items.findIndex((u) => u.id === user.id)
+        if (idx >= 0) state.items[idx] = user
+      })
+      .addCase(deleteUser.rejected, (state, action) => {
         state.mutating = false
         state.mutateError = action.payload
       })

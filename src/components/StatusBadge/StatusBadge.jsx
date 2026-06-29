@@ -8,7 +8,6 @@ import {
   KeyboardArrowDown,
 } from "@mui/icons-material"
 import { useColorMode } from "../../theme/ColorModeContext"
-import { PRIORITY } from "../../data/mockData"
 import { statusStyle, priorityStyle, badgeBaseSx } from "./style"
 
 /** Colored chip representing a ticket status. */
@@ -26,10 +25,10 @@ export function StatusBadge({ status, size = "small" }) {
 }
 
 const priorityIcon = {
-  [PRIORITY.LOW]: KeyboardArrowDown,
-  [PRIORITY.MEDIUM]: Remove,
-  [PRIORITY.HIGH]: KeyboardArrowUp,
-  [PRIORITY.CRITICAL]: KeyboardDoubleArrowUp,
+  "Low": KeyboardArrowDown,
+  "Medium": Remove,
+  "High": KeyboardArrowUp,
+  "Critical": KeyboardDoubleArrowUp,
 }
 
 /** Priority indicator with an arrow icon + label (Jira-style). */

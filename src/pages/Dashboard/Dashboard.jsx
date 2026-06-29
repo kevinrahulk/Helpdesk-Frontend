@@ -1,7 +1,9 @@
-import { useMemo } from "react"
+import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
+import CircularProgress from "@mui/material/CircularProgress"
+import Alert from "@mui/material/Alert"
 import {
   ConfirmationNumber,
   HourglassTop,
@@ -11,7 +13,8 @@ import {
   AutoAwesome,
   TrendingUp,
 } from "@mui/icons-material"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../../hooks/useAuth"
+import { useDashboard } from "../../../hooks/useDomainHooks"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import StatCard from "../../components/StatCard/StatCard"
 import SectionCard from "../../components/SectionCard/SectionCard"
@@ -19,46 +22,50 @@ import Button from "../../components/Button/Button"
 import DataTable from "../../components/DataTable/DataTable"
 import StatusBreakdown from "./StatusBreakdown"
 import { buildTicketColumns } from "../Tickets/ticketColumns"
-import { tickets as allTickets, STATUS, ROLES } from "../../data/mockData"
-import { scopeTickets, isOverdue, roleLabels } from "../../utils/format"
+import { roleLabels } from "../../utils/format"
 import { statGridSx, splitGridSx } from "./style"
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, role, isEmployee, isAgentOrAdmin } = useAuth()
+  const { data, loading, error, fetch: fetchDashboard } = useDashboard()
   const navigate = useNavigate()
 
-  const myTickets = useMemo(() => scopeTickets(allTickets, user), [user])
+  useEffect(() => {
+    fetchDashboard()
+  }, [fetchDashboard])
 
-  const stats = useMemo(() => {
-    const open = myTickets.filter((t) => t.status === STATUS.OPEN).length
-    const inProgress = myTickets.filter((t) => t.status === STATUS.IN_PROGRESS).length
-    const resolved = myTickets.filter((t) => [STATUS.RESOLVED, STATUS.CLOSED].includes(t.status)).length
-    const overdue = myTickets.filter((t) => isOverdue(t)).length
-    const unassigned = myTickets.filter((t) => !t.assignedTo).length
-    return { open, inProgress, resolved, overdue, unassigned, total: myTickets.length }
-  }, [myTickets])
+  const columns = buildTicketColumns({
+    showRequester: !isEmployee,
+    showAssignee: !isEmployee,
+  })
 
-  const columns = useMemo(
-    () =>
-      buildTicketColumns({
-        showRequester: user.role !== ROLES.EMPLOYEE,
-        showAssignee: user.role !== ROLES.EMPLOYEE,
-      }),
-    [user.role],
-  )
+  const recentTickets = data?.recent_tickets ?? data?.recently_assigned ?? []
 
-  const recent = useMemo(
-    () => [...myTickets].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 6),
-    [myTickets],
-  )
+  // Build stat values from the role-specific dashboard shape
+  const stats = {
+    open: data?.open_tickets ?? data?.assigned_open ?? 0,
+    inProgress: data?.in_progress_tickets ?? data?.assigned_in_progress ?? 0,
+    resolved: data?.closed_tickets ?? 0,
+    sla: isEmployee
+      ? (data?.waiting_tickets ?? 0)
+      : (data?.overdue_tickets ?? data?.sla_breached ?? 0),
+  }
 
-  const isEmployee = user.role === ROLES.EMPLOYEE
+  const statusRows = recentTickets.map((t) => ({ ...t, id: t.id ?? t.ticket_id }))
+
+  if (loading && !data) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 300 }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
 
   return (
     <Box>
       <PageHeader
-        title={`Welcome back, ${user.name.split(" ")[0]}`}
-        subtitle={`${roleLabels[user.role]} workspace overview`}
+        title={`Welcome back, ${user?.name?.split(" ")[0] ?? "there"}`}
+        subtitle={`${roleLabels[role] ?? role} workspace overview`}
         actions={
           <Button startIcon={<Add />} onClick={() => navigate("/tickets/new")}>
             New Ticket
@@ -66,31 +73,37 @@ export default function Dashboard() {
         }
       />
 
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
       <Box sx={statGridSx}>
         <StatCard
           label={isEmployee ? "My open tickets" : "Open"}
           value={stats.open}
           icon={<ConfirmationNumber />}
           tone="primary"
-          onClick={() => navigate("/tickets?status=Open")}
+          onClick={() => navigate("/tickets?status=open")}
         />
         <StatCard
           label="In progress"
           value={stats.inProgress}
           icon={<HourglassTop />}
           tone="info"
-          onClick={() => navigate("/tickets?status=In Progress")}
+          onClick={() => navigate("/tickets?status=in_progress")}
         />
         <StatCard
-          label="Resolved"
+          label="Resolved / Closed"
           value={stats.resolved}
           icon={<CheckCircle />}
           tone="success"
-          onClick={() => navigate("/tickets?status=Resolved")}
+          onClick={() => navigate("/tickets?status=resolved")}
         />
         <StatCard
           label={isEmployee ? "Awaiting your reply" : "SLA breached"}
-          value={isEmployee ? myTickets.filter((t) => t.status === STATUS.WAITING).length : stats.overdue}
+          value={stats.sla}
           icon={<WarningAmberRounded />}
           tone={isEmployee ? "warning" : "error"}
           onClick={() => navigate("/tickets")}
@@ -107,15 +120,18 @@ export default function Dashboard() {
           }
           padding="sm"
         >
-          <DataTable rows={recent} columns={columns} density="compact" pageSize={10} onRowClick={(row) => navigate(`/tickets/${row.id}`)} />
+          <DataTable
+            rows={statusRows}
+            columns={columns}
+            density="compact"
+            pageSize={10}
+            onRowClick={(row) => navigate(`/tickets/${row.id}`)}
+          />
         </SectionCard>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <SectionCard title="Status breakdown" icon={<TrendingUp sx={{ fontSize: "1.1rem", color: "text.secondary" }} />}>
-            <StatusBreakdown
-              tickets={myTickets}
-              statuses={[STATUS.OPEN, STATUS.IN_PROGRESS, STATUS.WAITING, STATUS.RESOLVED, STATUS.CLOSED]}
-            />
+            <StatusBreakdown tickets={statusRows} />
           </SectionCard>
 
           <SectionCard

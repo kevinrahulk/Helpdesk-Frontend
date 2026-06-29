@@ -11,8 +11,6 @@ import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import Divider from "@mui/material/Divider"
 import Badge from "@mui/material/Badge"
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup"
-import ToggleButton from "@mui/material/ToggleButton"
 import {
   MenuRounded,
   SearchRounded,
@@ -23,21 +21,14 @@ import {
   KeyboardArrowDown,
 } from "@mui/icons-material"
 import { useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../../hooks/useAuth"
 import { useColorMode } from "../../theme/ColorModeContext"
-import { ROLES } from "../../data/mockData"
 import { roleLabels } from "../../utils/format"
 import Avatar from "../../components/Avatar/Avatar"
 import { appBarSx, toolbarSx, searchSx } from "./style"
 
-const roleOptions = [
-  { value: ROLES.EMPLOYEE, label: "Employee" },
-  { value: ROLES.AGENT, label: "Agent" },
-  { value: ROLES.ADMIN, label: "Admin" },
-]
-
 export default function Topbar({ onMenuClick }) {
-  const { user, role, logout, switchRole } = useAuth()
+  const { user, role, logout } = useAuth()
   const { mode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState(null)
@@ -61,34 +52,6 @@ export default function Topbar({ onMenuClick }) {
         </Box>
 
         <Box sx={{ flexGrow: 1 }} />
-
-        {/* Demo role switcher */}
-        <Box sx={{ display: { xs: "none", sm: "flex" }, alignItems: "center", gap: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            Role
-          </Typography>
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={role}
-            onChange={(_, val) => val && switchRole(val)}
-            sx={{
-              "& .MuiToggleButton-root": {
-                px: 1.5,
-                py: 0.5,
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                textTransform: "none",
-              },
-            }}
-          >
-            {roleOptions.map((o) => (
-              <ToggleButton key={o.value} value={o.value} aria-label={o.label}>
-                {o.label}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-        </Box>
 
         <Tooltip title={mode === "light" ? "Switch to dark mode" : "Switch to light mode"}>
           <IconButton onClick={toggleColorMode} aria-label="Toggle theme">

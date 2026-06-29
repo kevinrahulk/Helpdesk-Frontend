@@ -4,9 +4,6 @@ import Typography from "@mui/material/Typography"
 import Alert from "@mui/material/Alert"
 import IconButton from "@mui/material/IconButton"
 import InputAdornment from "@mui/material/InputAdornment"
-import Divider from "@mui/material/Divider"
-import Chip from "@mui/material/Chip"
-import Tooltip from "@mui/material/Tooltip"
 import {
   SupportAgent,
   AutoAwesome,
@@ -17,14 +14,14 @@ import {
   LightModeOutlined,
   DarkModeOutlined,
 } from "@mui/icons-material"
-import { useNavigate, useLocation } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext"
+import { useNavigate, useLocation, Link } from "react-router-dom"
+import { useAuth } from "../../../hooks/useAuth"
 import { useColorMode } from "../../theme/ColorModeContext"
-import { demoAccounts } from "../../data/mockData"
 import Button from "../../components/Button/Button"
 import InputBox from "../../components/InputBox/InputBox"
 import { Form, FormField } from "../../components/Form/Form"
 import { pageSx, formColumnSx, formCardSx, brandColumnSx, featureRowSx } from "./style"
+import Tooltip from "@mui/material/Tooltip"
 
 const features = [
   { icon: AutoAwesome, title: "AI-assisted triage", desc: "Smart category, priority and first-fix suggestions on every ticket." },
@@ -33,7 +30,7 @@ const features = [
 ]
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, loading, error, clearError } = useAuth()
   const { mode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
   const location = useLocation()
@@ -42,8 +39,6 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [showPw, setShowPw] = useState(false)
   const [errors, setErrors] = useState({})
-  const [formError, setFormError] = useState("")
-  const [loading, setLoading] = useState(false)
 
   const from = location.state?.from?.pathname || "/dashboard"
 
@@ -57,25 +52,12 @@ export default function Login() {
     return Object.keys(next).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setFormError("")
+    if (error) clearError()
     if (!validate()) return
-    setLoading(true)
-    // Simulate a network round-trip for the mock login.
-    setTimeout(() => {
-      const result = login({ email, password })
-      setLoading(false)
-      if (result.success) navigate(from, { replace: true })
-      else setFormError(result.message)
-    }, 500)
-  }
-
-  const fillDemo = (account) => {
-    setEmail(account.email)
-    setPassword("Password@123")
-    setErrors({})
-    setFormError("")
+    const result = await login({ email, password })
+    if (result.success) navigate(from, { replace: true })
   }
 
   return (
@@ -119,9 +101,9 @@ export default function Login() {
             Sign in to manage and resolve support tickets.
           </Typography>
 
-          {formError && (
+          {error && (
             <Alert severity="error" sx={{ mb: 2.5 }}>
-              {formError}
+              {error}
             </Alert>
           )}
 
@@ -164,25 +146,16 @@ export default function Login() {
             </Button>
           </Form>
 
-          <Divider sx={{ my: 3 }}>
-            <Typography variant="caption" color="text.secondary">
-              Demo accounts
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5, textAlign: "center" }}>
+            Need an admin account?{" "}
+            <Typography
+              component={Link}
+              to="/signup"
+              variant="body2"
+              sx={{ color: "primary.main", textDecoration: "none", fontWeight: 600 }}
+            >
+              Create one
             </Typography>
-          </Divider>
-
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {demoAccounts.map((a) => (
-              <Chip
-                key={a.role}
-                label={a.label}
-                onClick={() => fillDemo(a)}
-                variant="outlined"
-                sx={{ fontWeight: 600 }}
-              />
-            ))}
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1.5 }}>
-            Tap a role to pre-fill credentials, then sign in. Any password with 8+ characters works in this demo.
           </Typography>
         </Box>
       </Box>

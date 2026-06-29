@@ -4,12 +4,12 @@ import Tooltip from "@mui/material/Tooltip"
 import { WarningAmberRounded, AutoAwesome } from "@mui/icons-material"
 import Avatar from "../../components/Avatar/Avatar"
 import { StatusBadge, PriorityBadge } from "../../components/StatusBadge/StatusBadge"
-import { getUserById } from "../../data/mockData"
 import { formatDate, timeFromNow, isOverdue } from "../../utils/format"
 
 /**
  * Column factory for the tickets DataTable.
- * Pass options to tailor columns per role/context.
+ * Backend response shape: ticket.requester, ticket.assignee as nested objects,
+ * or top-level created_by / assigned_to if the API returns flat format.
  */
 export function buildTicketColumns({ showRequester = true, showAssignee = true } = {}) {
   const columns = [
@@ -19,7 +19,7 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
       width: 110,
       renderCell: (params) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, fontWeight: 600 }}>
-          {params.row.ai?.confidence != null && (
+          {params.row.ai_suggestion_id && (
             <Tooltip title="AI insights available">
               <AutoAwesome sx={{ fontSize: "0.95rem", color: "secondary.main" }} />
             </Tooltip>
@@ -45,7 +45,7 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
               {params.value}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {params.row.category}
+              {params.row.category?.name ?? params.row.category}
             </Typography>
           </Box>
         </Box>
@@ -67,17 +67,17 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
 
   if (showRequester) {
     columns.push({
-      field: "createdBy",
+      field: "requester",
       headerName: "Requester",
       width: 170,
-      valueGetter: (value) => getUserById(value)?.name || "—",
+      valueGetter: (_val, row) => row.requester?.name ?? row.created_by_user?.name ?? "—",
       renderCell: (params) => {
-        const u = getUserById(params.row.createdBy)
+        const name = params.row.requester?.name ?? params.row.created_by_user?.name
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar name={u?.name} size="xs" />
+            <Avatar name={name} size="xs" />
             <Typography variant="body2" noWrap>
-              {u?.name || "—"}
+              {name ?? "—"}
             </Typography>
           </Box>
         )
@@ -87,13 +87,13 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
 
   if (showAssignee) {
     columns.push({
-      field: "assignedTo",
+      field: "assignee",
       headerName: "Assignee",
       width: 170,
-      valueGetter: (value) => getUserById(value)?.name || "Unassigned",
+      valueGetter: (_val, row) => row.assignee?.name ?? row.assigned_to_user?.name ?? "Unassigned",
       renderCell: (params) => {
-        const u = getUserById(params.row.assignedTo)
-        if (!u)
+        const name = params.row.assignee?.name ?? params.row.assigned_to_user?.name
+        if (!name)
           return (
             <Typography variant="body2" color="text.secondary">
               Unassigned
@@ -101,9 +101,9 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
           )
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Avatar name={u.name} size="xs" />
+            <Avatar name={name} size="xs" />
             <Typography variant="body2" noWrap>
-              {u.name}
+              {name}
             </Typography>
           </Box>
         )
@@ -113,10 +113,10 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
 
   columns.push(
     {
-      field: "createdAt",
+      field: "created_at",
       headerName: "Created",
       width: 130,
-      valueGetter: (value) => value,
+      valueGetter: (_val, row) => row.created_at ?? row.createdAt,
       renderCell: (params) => (
         <Typography variant="body2" color="text.secondary">
           {formatDate(params.value)}
@@ -124,9 +124,10 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
       ),
     },
     {
-      field: "slaDueAt",
+      field: "sla_due_at",
       headerName: "SLA",
       width: 110,
+      valueGetter: (_val, row) => row.sla_due_at ?? row.slaDueAt,
       renderCell: (params) => (
         <Typography
           variant="body2"

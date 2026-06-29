@@ -15,7 +15,7 @@ import {
   SupportAgent,
 } from "@mui/icons-material"
 import { useLocation, useNavigate } from "react-router-dom"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../../hooks/useAuth"
 import { navItemsForRole } from "../navConfig"
 import { roleLabels } from "../../utils/format"
 import { SIDEBAR_WIDTH, drawerPaperSx, navButtonSx, brandSx } from "./style"

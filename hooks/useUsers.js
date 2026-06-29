@@ -14,6 +14,7 @@ import {
   createAgent as createAgentThunk,
   updateUser as updateUserThunk,
   updateUserStatus as updateUserStatusThunk,
+  deleteUser as deleteUserThunk,
   fetchAgents as fetchAgentsThunk,
   clearUserErrors,
   selectUserItems,
@@ -75,10 +76,17 @@ export function useUsers() {
    */
   const createEmployee = useCallback(
     async (payload) => {
-      const result = await dispatch(createEmployeeThunk(payload))
+      const result = await dispatch(
+        createEmployeeThunk({
+          ...payload,
+          role_id: "a494b57a-5fe2-44be-96da-da1d9d5e6d7d", // Employee
+        })
+      )
+
       if (createEmployeeThunk.fulfilled.match(result)) {
         return { success: true, user: result.payload }
       }
+
       return { success: false, error: result.payload }
     },
     [dispatch],
@@ -91,10 +99,17 @@ export function useUsers() {
    */
   const createAgent = useCallback(
     async (payload) => {
-      const result = await dispatch(createAgentThunk(payload))
+      const result = await dispatch(
+        createAgentThunk({
+          ...payload,
+          role_id: "66f13813-4239-42ae-9425-b00a237d278a", // Agent
+        })
+      )
+
       if (createAgentThunk.fulfilled.match(result)) {
         return { success: true, user: result.payload }
       }
+
       return { success: false, error: result.payload }
     },
     [dispatch],
@@ -134,6 +149,17 @@ export function useUsers() {
     [dispatch],
   )
 
+  const deleteUser = useCallback(
+    async (userId) => {
+      const result = await dispatch(deleteUserThunk(userId))
+      if (deleteUserThunk.fulfilled.match(result)) {
+        return { success: true, user: result.payload }
+      }
+      return { success: false, error: result.payload }
+    },
+    [dispatch],
+  )
+
   /**
    * Fetch all active agents with their open ticket counts.
    */
@@ -161,6 +187,7 @@ export function useUsers() {
     createAgent,
     updateUser,
     updateUserStatus,
+    deleteUser,
     fetchAgents,
     clearErrors,
     // Selector factory — use in component: const user = useSelector(selectUserById(id))

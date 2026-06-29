@@ -59,7 +59,7 @@ import {
 import {
   getTicketSuggestion as getTicketSuggestionThunk,
   getTicketSummary as getTicketSummaryThunk,
-  clearSuggestion,
+  clearSuggestion as clearSuggestionAction,
   clearAIErrors,
   selectAISuggestion,
   selectAISuggestionLoading,
@@ -73,12 +73,6 @@ import {
 // useCategories
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Hook for ticket categories — used in Create Ticket forms, admin management.
- *
- * Usage:
- *   const { categories, loading, fetchCategories, createCategory } = useCategories()
- */
 export function useCategories() {
   const dispatch = useDispatch()
 
@@ -88,24 +82,18 @@ export function useCategories() {
   const mutating = useSelector(selectCategoriesMutating)
   const mutateError = useSelector(selectCategoriesMutateError)
 
-  /** Fetch active categories. Pass { active_only: false } to include inactive. */
-  const fetchCategories = useCallback(
+  const fetch = useCallback(
     (params = { active_only: true }) => {
       dispatch(fetchCategoriesThunk(params))
     },
     [dispatch],
   )
 
-  /** Fetch a single category by UUID. */
   const fetchCategory = useCallback(
     (categoryId) => dispatch(fetchCategoryByIdThunk(categoryId)),
     [dispatch],
   )
 
-  /**
-   * Create a category (admin only).
-   * @param {{ name, description?, is_active? }} payload
-   */
   const createCategory = useCallback(
     async (payload) => {
       const result = await dispatch(createCategoryThunk(payload))
@@ -115,11 +103,6 @@ export function useCategories() {
     [dispatch],
   )
 
-  /**
-   * Update a category (admin only).
-   * @param {string} categoryId
-   * @param {object} payload - TicketCategoryUpdate
-   */
   const updateCategory = useCallback(
     async (categoryId, payload) => {
       const result = await dispatch(updateCategoryThunk({ categoryId, payload }))
@@ -129,10 +112,6 @@ export function useCategories() {
     [dispatch],
   )
 
-  /**
-   * Soft-delete a category (admin only).
-   * @param {string} categoryId
-   */
   const deactivateCategory = useCallback(
     async (categoryId) => {
       const result = await dispatch(deactivateCategoryThunk(categoryId))
@@ -150,13 +129,12 @@ export function useCategories() {
     error,
     mutating,
     mutateError,
-    fetchCategories,
+    fetch,
     fetchCategory,
     createCategory,
     updateCategory,
     deactivateCategory,
     clearErrors,
-    // Selector factory for individual lookups
     selectCategoryById,
   }
 }
@@ -165,20 +143,6 @@ export function useCategories() {
 // useDashboard
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Hook for the role-adaptive dashboard page.
- *
- * The backend determines which dashboard shape to return based on the JWT role.
- * The hook exposes the raw `data` plus convenience selectors.
- *
- * Usage:
- *   const { data, loading, recentTickets, agentWorkload, refresh } = useDashboard()
- *
- * Type narrowing in the component:
- *   if (role === 'admin') { data.total_tickets ... data.agent_workload ... }
- *   if (role === 'agent') { data.assigned_open ... data.sla_breached ... }
- *   if (role === 'employee') { data.open_tickets ... data.closed_tickets ... }
- */
 export function useDashboard() {
   const dispatch = useDispatch()
 
@@ -189,12 +153,10 @@ export function useDashboard() {
   const recentTickets = useSelector(selectRecentTickets)
   const agentWorkload = useSelector(selectAgentWorkload)
 
-  /** Fetch dashboard data for the current user. */
-  const refresh = useCallback(() => {
+  const fetch = useCallback(() => {
     dispatch(fetchDashboardThunk())
   }, [dispatch])
 
-  /** Clear cached dashboard data (e.g. on logout). */
   const reset = useCallback(() => {
     dispatch(clearDashboard())
   }, [dispatch])
@@ -210,7 +172,7 @@ export function useDashboard() {
     lastFetched,
     recentTickets,
     agentWorkload,
-    refresh,
+    fetch,
     reset,
     clearError,
   }
@@ -220,12 +182,6 @@ export function useDashboard() {
 // useReports
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Hook for the admin reports page.
- *
- * Usage:
- *   const { summary, fetchSummary, agentPerformance, ... } = useReports()
- */
 export function useReports() {
   const dispatch = useDispatch()
 
@@ -242,39 +198,26 @@ export function useReports() {
   const ticketVolume = useSelector(selectTicketVolume)
   const volumeLoading = useSelector(selectVolumeLoading)
 
-  /**
-   * @param {object} params - { date_from?, date_to?, priority?, category_id? }
-   */
   const fetchSummary = useCallback(
     (params = {}) => dispatch(fetchReportSummaryThunk(params)),
     [dispatch],
   )
 
-  /**
-   * @param {object} params - { date_from?, date_to? }
-   */
   const fetchAgentPerformance = useCallback(
     (params = {}) => dispatch(fetchAgentPerformanceThunk(params)),
     [dispatch],
   )
 
-  /**
-   * @param {object} params - { date_from?, date_to? }
-   */
   const fetchSLA = useCallback(
     (params = {}) => dispatch(fetchSLAComplianceThunk(params)),
     [dispatch],
   )
 
-  /**
-   * @param {object} params - { groupby?: "day"|"week"|"month", date_from?, date_to? }
-   */
   const fetchVolume = useCallback(
     (params = { groupby: "month" }) => dispatch(fetchTicketVolumeThunk(params)),
     [dispatch],
   )
 
-  /** Fetch all four reports at once. */
   const fetchAll = useCallback(
     (params = {}) => {
       dispatch(fetchReportSummaryThunk(params))
@@ -313,16 +256,14 @@ export function useReports() {
 /**
  * Hook for AI assistant features.
  *
- * Two modes:
- *  1. Creation-time suggestion — call getSuggestion(title, description) before ticket submit.
- *     The returned suggestion_id should be passed in TicketCreate.ai_suggestion_id.
+ * Creation-time (CreateTicket page):
+ *   getSuggestion({ title, description }) → populates `suggestion`
+ *   clearSuggestion() → clears it on unmount
  *
- *  2. Ticket summary panel — call fetchSummary(ticketId) to populate the AIPanel component.
- *
- * Usage:
- *   const { suggestion, getSuggestion, fetchSummary, selectTicketSummary } = useAI()
+ * Per-ticket summary (TicketDetails page):
+ *   getTicketSummary(ticketId) → populates `summary` via selectAITicketSummary
  */
-export function useAI() {
+export function useAI(ticketId) {
   const dispatch = useDispatch()
 
   const suggestion = useSelector(selectAISuggestion)
@@ -331,11 +272,9 @@ export function useAI() {
   const summaryLoading = useSelector(selectAISummaryLoading)
   const summaryError = useSelector(selectAISummaryError)
 
-  /**
-   * Request AI suggestions for a draft ticket (employee flow).
-   * @param {{ title: string, description: string }} payload
-   * @returns {Promise<{ success, suggestion?, error? }>}
-   */
+  // Per-ticket summary (only meaningful when ticketId is provided)
+  const summary = useSelector(ticketId ? selectAITicketSummary(ticketId) : () => null)
+
   const getSuggestion = useCallback(
     async (payload) => {
       const result = await dispatch(getTicketSuggestionThunk(payload))
@@ -347,14 +286,9 @@ export function useAI() {
     [dispatch],
   )
 
-  /**
-   * Fetch or regenerate the AI summary for an existing ticket (agent/admin flow).
-   * @param {string} ticketId - UUID
-   * @returns {Promise<{ success, summary?, error? }>}
-   */
-  const fetchSummary = useCallback(
-    async (ticketId) => {
-      const result = await dispatch(getTicketSummaryThunk(ticketId))
+  const getTicketSummary = useCallback(
+    async (id) => {
+      const result = await dispatch(getTicketSummaryThunk(id))
       if (getTicketSummaryThunk.fulfilled.match(result)) {
         return { success: true, summary: result.payload.summary }
       }
@@ -363,25 +297,20 @@ export function useAI() {
     [dispatch],
   )
 
-  /** Clear the creation-time suggestion (call on unmount of Create Ticket page). */
-  const resetSuggestion = useCallback(() => dispatch(clearSuggestion()), [dispatch])
+  const clearSuggestion = useCallback(() => dispatch(clearSuggestionAction()), [dispatch])
 
   const clearErrors = useCallback(() => dispatch(clearAIErrors()), [dispatch])
 
   return {
-    // Creation-time suggestion
     suggestion,
     suggestionLoading,
     suggestionError,
     getSuggestion,
-    resetSuggestion,
-
-    // Per-ticket summary (selector factory — call with ticketId)
+    clearSuggestion,
+    summary,
     summaryLoading,
     summaryError,
-    fetchSummary,
-    selectTicketSummary: selectAITicketSummary, // usage: useSelector(selectTicketSummary(ticketId))
-
+    getTicketSummary,
     clearErrors,
   }
 }
