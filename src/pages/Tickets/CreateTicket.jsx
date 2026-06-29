@@ -27,6 +27,7 @@ const PRIORITIES = [
   { label: "High", value: "high" },
   { label: "Critical", value: "critical" },
 ]
+
 // ── Create Category Dialog ────────────────────────────────────────────────────
 function CreateCategoryDialog({ open, onClose, onCreate, loading, error }) {
   const [name, setName] = useState("")
@@ -81,7 +82,7 @@ function CreateCategoryDialog({ open, onClose, onCreate, loading, error }) {
 
 export default function CreateTicket() {
   const navigate = useNavigate()
-  const { createTicket, mutating, mutateError } = useTickets()
+  const { createTicket, mutating, mutateError, clearErrors } = useTickets()
   const { categories, fetch: fetchCategories, createCategory, mutating: catMutating, mutateError: catMutateError } = useCategories()
   const { suggestion, suggestionLoading, suggestionError, getSuggestion, clearSuggestion } = useAI()
 
@@ -89,26 +90,30 @@ export default function CreateTicket() {
     title: "",
     description: "",
     category_id: "",
-    priority: "Medium",
+    priority: "medium",   // ← lowercase to match backend enum
   })
   const [errors, setErrors] = useState({})
+  const [submitError, setSubmitError] = useState("")   // ← local error for submit failures
   const [createCatOpen, setCreateCatOpen] = useState(false)
 
   useEffect(() => {
     fetchCategories()
-    return () => clearSuggestion()
-  }, [fetchCategories, clearSuggestion])
+    return () => { clearSuggestion(); clearErrors() }
+  }, [fetchCategories, clearSuggestion, clearErrors])
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
+    if (submitError) setSubmitError("")
   }
 
   const validateForm = () => {
     const newErrors = {}
     if (!formData.title.trim()) newErrors.title = "Title is required"
+    if (formData.title.trim().length < 5) newErrors.title = "Title must be at least 5 characters"
     if (!formData.description.trim()) newErrors.description = "Description is required"
+    if (formData.description.trim().length < 20) newErrors.description = "Description must be at least 20 characters"
     if (!formData.category_id) newErrors.category_id = "Category is required"
     return newErrors
   }
@@ -141,28 +146,44 @@ export default function CreateTicket() {
     setFormData((prev) => ({
       ...prev,
       category_id: matchedCat?.id ?? prev.category_id,
-      priority: suggestion.suggested_priority ?? prev.priority,
+      // suggested_priority comes lowercase from backend
+      priority: suggestion.suggested_priority?.toLowerCase() ?? prev.priority,
     }))
     clearSuggestion()
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setSubmitError("")
     const newErrors = validateForm()
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
     const payload = {
-      title: formData.title,
-      description: formData.description,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
       category_id: formData.category_id,
-      priority: formData.priority.toLocaleLowerCase(),
+      priority: formData.priority,   // already lowercase
       ...(suggestion?.suggestion_id && { ai_suggestion_id: suggestion.suggestion_id }),
     }
     const result = await createTicket(payload)
-    if (result.success) navigate("/tickets?status=open")
+    if (result.success) {
+      navigate("/tickets?status=open")
+    } else {
+      // Surface the error clearly instead of showing a blank screen
+      setSubmitError(
+        typeof result.error === "string"
+          ? result.error
+          : Array.isArray(result.error)
+            ? result.error.map((e) => e.msg ?? JSON.stringify(e)).join(", ")
+            : "Failed to create ticket. Please try again.",
+      )
+    }
   }
+
+  // Also surface redux-level mutateError (network failures, etc.)
+  const displayError = submitError || mutateError
 
   return (
     <><Box>
@@ -173,9 +194,9 @@ export default function CreateTicket() {
           Back
         </Button>} />
 
-      {mutateError && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {mutateError}
+      {displayError && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setSubmitError("")}>
+          {displayError}
         </Alert>
       )}
 

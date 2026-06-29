@@ -3,7 +3,7 @@ import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import { DataGrid } from "@mui/x-data-grid"
 import { Inbox } from "@mui/icons-material"
-import { dataGridSx, tableDensityRowHeight } from "./style"
+import { dataGridSx } from "./style"
 
 function EmptyState({ message }) {
   return (
@@ -15,15 +15,10 @@ function EmptyState({ message }) {
 }
 
 /**
- * Reusable data table built on the MUI X DataGrid (the MUI table template).
+ * Reusable data table built on MUI X DataGrid.
  *
- * Props:
- * - rows, columns: standard DataGrid data
- * - onRowClick: row selection callback (row -> details)
- * - density: "compact" | "standard" | "spacious"
- * - pageSize: default rows per page (FRD default = 20)
- * - loading: show loading state
- * - emptyMessage: custom message when no rows
+ * Uses getRowHeight={() => "auto"} so cells with multi-line renderCell
+ * (avatars, badges, wrapped text) never clip or overlap adjacent rows.
  */
 export default function DataTable({
   rows,
@@ -41,7 +36,8 @@ export default function DataTable({
         columns={columns}
         loading={loading}
         onRowClick={(params) => onRowClick?.(params.row)}
-        rowHeight={tableDensityRowHeight[density] || tableDensityRowHeight.standard}
+        // ── FIX: let each row size itself to its tallest cell ─────────────
+        getRowHeight={() => "auto"}
         columnHeaderHeight={48}
         disableRowSelectionOnClick
         disableColumnMenu
@@ -53,7 +49,14 @@ export default function DataTable({
           noRowsOverlay: () => <EmptyState message={emptyMessage} />,
         }}
         autoHeight
-        sx={dataGridSx}
+        sx={{
+          ...dataGridSx,
+          // ensure cells have vertical padding when row is auto-height
+          "& .MuiDataGrid-cell": {
+            ...dataGridSx["& .MuiDataGrid-cell"],
+            py: 1.25,
+          },
+        }}
       />
     </Card>
   )
