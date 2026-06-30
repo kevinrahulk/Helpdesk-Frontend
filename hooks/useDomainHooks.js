@@ -43,6 +43,9 @@ import {
   fetchAgentPerformance as fetchAgentPerformanceThunk,
   fetchSLACompliance as fetchSLAComplianceThunk,
   fetchTicketVolume as fetchTicketVolumeThunk,
+  fetchCategoryDistribution as fetchCategoryDistributionThunk,
+  fetchPriorityDistribution as fetchPriorityDistributionThunk,
+  fetchEmployeeActivity as fetchEmployeeActivityThunk,
   clearReportErrors,
   selectReportSummary,
   selectReportSummaryLoading,
@@ -53,6 +56,12 @@ import {
   selectSLALoading,
   selectTicketVolume,
   selectVolumeLoading,
+  selectCategoryDistribution,
+  selectCategoryLoading,
+  selectPriorityDistribution,
+  selectPriorityLoading,
+  selectEmployeeActivity,
+  selectEmployeeLoading,
 } from "../slices/reportsSlice"
 
 // AI
@@ -198,6 +207,15 @@ export function useReports() {
   const ticketVolume = useSelector(selectTicketVolume)
   const volumeLoading = useSelector(selectVolumeLoading)
 
+  const categoryDistribution = useSelector(selectCategoryDistribution)
+  const categoryLoading = useSelector(selectCategoryLoading)
+
+  const priorityDistribution = useSelector(selectPriorityDistribution)
+  const priorityLoading = useSelector(selectPriorityLoading)
+
+  const employeeActivity = useSelector(selectEmployeeActivity)
+  const employeeLoading = useSelector(selectEmployeeLoading)
+
   const fetchSummary = useCallback(
     (params = {}) => dispatch(fetchReportSummaryThunk(params)),
     [dispatch],
@@ -218,12 +236,30 @@ export function useReports() {
     [dispatch],
   )
 
+  const fetchCategoryDist = useCallback(
+    (params = {}) => dispatch(fetchCategoryDistributionThunk(params)),
+    [dispatch],
+  )
+
+  const fetchPriorityDist = useCallback(
+    (params = {}) => dispatch(fetchPriorityDistributionThunk(params)),
+    [dispatch],
+  )
+
+  const fetchEmployeeAct = useCallback(
+    (params = {}) => dispatch(fetchEmployeeActivityThunk(params)),
+    [dispatch],
+  )
+
   const fetchAll = useCallback(
     (params = {}) => {
       dispatch(fetchReportSummaryThunk(params))
       dispatch(fetchAgentPerformanceThunk(params))
       dispatch(fetchSLAComplianceThunk(params))
       dispatch(fetchTicketVolumeThunk({ groupby: "month", ...params }))
+      dispatch(fetchCategoryDistributionThunk(params))
+      dispatch(fetchPriorityDistributionThunk(params))
+      dispatch(fetchEmployeeActivityThunk(params))
     },
     [dispatch],
   )
@@ -240,10 +276,19 @@ export function useReports() {
     slaLoading,
     ticketVolume,
     volumeLoading,
+    categoryDistribution,
+    categoryLoading,
+    priorityDistribution,
+    priorityLoading,
+    employeeActivity,
+    employeeLoading,
     fetchSummary,
     fetchAgentPerformance,
     fetchSLA,
     fetchVolume,
+    fetchCategoryDist,
+    fetchPriorityDist,
+    fetchEmployeeAct,
     fetchAll,
     clearErrors,
   }

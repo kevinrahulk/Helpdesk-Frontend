@@ -2,10 +2,14 @@
  * reportsSlice — Admin reporting & analytics
  *
  * Covers:
- *   GET /reports/summary           → fetchReportSummary
- *   GET /reports/agent-performance → fetchAgentPerformance
- *   GET /reports/sla               → fetchSLACompliance
- *   GET /reports/ticket-volume     → fetchTicketVolume
+ *   GET /reports/summary              → fetchReportSummary
+ *   GET /reports/agent-performance    → fetchAgentPerformance
+ *   GET /reports/sla                  → fetchSLACompliance
+ *   GET /reports/ticket-volume        → fetchTicketVolume
+ *   GET /reports/category-distribution → fetchCategoryDistribution
+ *   GET /reports/priority-distribution → fetchPriorityDistribution
+ *   GET /reports/employee-activity     → fetchEmployeeActivity
+ *   GET /reports/export                → exportReport
  */
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
@@ -13,66 +17,86 @@ import apiClient from "../api/apiClient"
 
 // ── Async thunks ──────────────────────────────────────────────────────────
 
-/**
- * High-level metrics: totals, resolution time, SLA compliance, volume.
- * @param {object} params - { date_from?, date_to?, priority?, category_id? }
- */
 export const fetchReportSummary = createAsyncThunk(
   "reports/fetchReportSummary",
   async (params = {}, { rejectWithValue }) => {
     try {
       const { data } = await apiClient.get("/reports/summary", { params })
-      return data.data // ReportSummary
+      return data.data
     } catch (err) {
       return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch report summary.")
     }
   },
 )
 
-/**
- * Per-agent performance metrics.
- * @param {object} params - { date_from?, date_to? }
- */
 export const fetchAgentPerformance = createAsyncThunk(
   "reports/fetchAgentPerformance",
   async (params = {}, { rejectWithValue }) => {
     try {
       const { data } = await apiClient.get("/reports/agent-performance", { params })
-      return data.data // AgentPerformanceRow[]
+      return data.data
     } catch (err) {
       return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch agent performance.")
     }
   },
 )
 
-/**
- * SLA compliance stats.
- * @param {object} params - { date_from?, date_to? }
- */
 export const fetchSLACompliance = createAsyncThunk(
   "reports/fetchSLACompliance",
   async (params = {}, { rejectWithValue }) => {
     try {
       const { data } = await apiClient.get("/reports/sla", { params })
-      return data.data // SLAComplianceReport { resolved_within_sla, resolved_breached_sla, compliance_rate_pct }
+      return data.data
     } catch (err) {
       return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch SLA compliance.")
     }
   },
 )
 
-/**
- * Ticket volume grouped by day, week, or month.
- * @param {object} params - { groupby?: "day"|"week"|"month", date_from?, date_to? }
- */
 export const fetchTicketVolume = createAsyncThunk(
   "reports/fetchTicketVolume",
   async (params = { groupby: "month" }, { rejectWithValue }) => {
     try {
       const { data } = await apiClient.get("/reports/ticket-volume", { params })
-      return data.data // TicketVolumePoint[] { period, count }
+      return data.data
     } catch (err) {
       return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch ticket volume.")
+    }
+  },
+)
+
+export const fetchCategoryDistribution = createAsyncThunk(
+  "reports/fetchCategoryDistribution",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { data } = await apiClient.get("/reports/category-distribution", { params })
+      return data.data
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch category distribution.")
+    }
+  },
+)
+
+export const fetchPriorityDistribution = createAsyncThunk(
+  "reports/fetchPriorityDistribution",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { data } = await apiClient.get("/reports/priority-distribution", { params })
+      return data.data
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch priority distribution.")
+    }
+  },
+)
+
+export const fetchEmployeeActivity = createAsyncThunk(
+  "reports/fetchEmployeeActivity",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const { data } = await apiClient.get("/reports/employee-activity", { params })
+      return data.data
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.detail ?? "Failed to fetch employee activity.")
     }
   },
 )
@@ -80,21 +104,33 @@ export const fetchTicketVolume = createAsyncThunk(
 // ── Slice ─────────────────────────────────────────────────────────────────
 
 const initialState = {
-  summary: null,             // ReportSummary | null
+  summary: null,
   summaryLoading: false,
   summaryError: null,
 
-  agentPerformance: [],      // AgentPerformanceRow[]
+  agentPerformance: [],
   agentPerformanceLoading: false,
   agentPerformanceError: null,
 
-  slaCompliance: null,       // SLAComplianceReport | null
+  slaCompliance: null,
   slaLoading: false,
   slaError: null,
 
-  ticketVolume: [],          // TicketVolumePoint[]
+  ticketVolume: [],
   volumeLoading: false,
   volumeError: null,
+
+  categoryDistribution: [],
+  categoryLoading: false,
+  categoryError: null,
+
+  priorityDistribution: [],
+  priorityLoading: false,
+  priorityError: null,
+
+  employeeActivity: null,
+  employeeLoading: false,
+  employeeError: null,
 }
 
 const reportsSlice = createSlice({
@@ -106,6 +142,9 @@ const reportsSlice = createSlice({
       state.agentPerformanceError = null
       state.slaError = null
       state.volumeError = null
+      state.categoryError = null
+      state.priorityError = null
+      state.employeeError = null
     },
   },
   extraReducers: (builder) => {
@@ -168,6 +207,51 @@ const reportsSlice = createSlice({
         state.volumeLoading = false
         state.volumeError = action.payload
       })
+
+    // ── fetchCategoryDistribution ────────────────────────────────────────
+    builder
+      .addCase(fetchCategoryDistribution.pending, (state) => {
+        state.categoryLoading = true
+        state.categoryError = null
+      })
+      .addCase(fetchCategoryDistribution.fulfilled, (state, action) => {
+        state.categoryLoading = false
+        state.categoryDistribution = action.payload
+      })
+      .addCase(fetchCategoryDistribution.rejected, (state, action) => {
+        state.categoryLoading = false
+        state.categoryError = action.payload
+      })
+
+    // ── fetchPriorityDistribution ────────────────────────────────────────
+    builder
+      .addCase(fetchPriorityDistribution.pending, (state) => {
+        state.priorityLoading = true
+        state.priorityError = null
+      })
+      .addCase(fetchPriorityDistribution.fulfilled, (state, action) => {
+        state.priorityLoading = false
+        state.priorityDistribution = action.payload
+      })
+      .addCase(fetchPriorityDistribution.rejected, (state, action) => {
+        state.priorityLoading = false
+        state.priorityError = action.payload
+      })
+
+    // ── fetchEmployeeActivity ────────────────────────────────────────────
+    builder
+      .addCase(fetchEmployeeActivity.pending, (state) => {
+        state.employeeLoading = true
+        state.employeeError = null
+      })
+      .addCase(fetchEmployeeActivity.fulfilled, (state, action) => {
+        state.employeeLoading = false
+        state.employeeActivity = action.payload
+      })
+      .addCase(fetchEmployeeActivity.rejected, (state, action) => {
+        state.employeeLoading = false
+        state.employeeError = action.payload
+      })
   },
 })
 
@@ -187,5 +271,14 @@ export const selectSLALoading = (state) => state.reports.slaLoading
 
 export const selectTicketVolume = (state) => state.reports.ticketVolume
 export const selectVolumeLoading = (state) => state.reports.volumeLoading
+
+export const selectCategoryDistribution = (state) => state.reports.categoryDistribution
+export const selectCategoryLoading = (state) => state.reports.categoryLoading
+
+export const selectPriorityDistribution = (state) => state.reports.priorityDistribution
+export const selectPriorityLoading = (state) => state.reports.priorityLoading
+
+export const selectEmployeeActivity = (state) => state.reports.employeeActivity
+export const selectEmployeeLoading = (state) => state.reports.employeeLoading
 
 export default reportsSlice.reducer

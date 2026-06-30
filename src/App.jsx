@@ -8,7 +8,7 @@ import TicketList from "./pages/Tickets/TicketList"
 import TicketDetails from "./pages/Tickets/TicketDetails"
 import CreateTicket from "./pages/Tickets/CreateTicket"
 import UserManagement from "./pages/UserManagement/UserManagement"
-import ComingSoon from "./pages/ComingSoon"
+import Reports from "./pages/Reports/Reports"
 
 export default function App() {
   return (
@@ -46,7 +46,7 @@ export default function App() {
           path="/reports"
           element={
             <ProtectedRoute allow={["admin"]}>
-              <ComingSoon title="Reports" subtitle="Analytics, SLA compliance and agent performance." />
+              <Reports />
             </ProtectedRoute>
           }
         />

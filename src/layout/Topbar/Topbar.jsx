@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import AppBar from "@mui/material/AppBar"
 import Toolbar from "@mui/material/Toolbar"
 import Box from "@mui/material/Box"
@@ -11,6 +12,8 @@ import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import Divider from "@mui/material/Divider"
 import Badge from "@mui/material/Badge"
+import Popover from "@mui/material/Popover"
+import CircularProgress from "@mui/material/CircularProgress"
 import {
   MenuRounded,
   SearchRounded,
@@ -19,11 +22,13 @@ import {
   NotificationsNoneRounded,
   LogoutRounded,
   KeyboardArrowDown,
+  DoneAll,
+  Circle,
 } from "@mui/icons-material"
-import { useNavigate } from "react-router-dom"
 import { useAuth } from "../../../hooks/useAuth"
+import { useNotifications } from "../../../hooks/useNotifications"
 import { useColorMode } from "../../theme/ColorModeContext"
-import { roleLabels } from "../../utils/format"
+import { roleLabels, formatRelativeTime } from "../../utils/format"
 import Avatar from "../../components/Avatar/Avatar"
 import { appBarSx, toolbarSx, searchSx } from "./style"
 
@@ -32,6 +37,47 @@ export default function Topbar({ onMenuClick }) {
   const { mode, toggleColorMode } = useColorMode()
   const navigate = useNavigate()
   const [anchorEl, setAnchorEl] = useState(null)
+  const [notifAnchor, setNotifAnchor] = useState(null)
+
+  const {
+    notifications,
+    unreadCount,
+    loading: notifLoading,
+    fetchAll: fetchNotifications,
+    fetchCount,
+    markRead,
+    markAllRead,
+  } = useNotifications()
+
+  // Poll for unread count every 30 seconds
+  useEffect(() => {
+    fetchCount()
+    const interval = setInterval(fetchCount, 30_000)
+    return () => clearInterval(interval)
+  }, [fetchCount])
+
+  const handleOpenNotifications = (e) => {
+    setNotifAnchor(e.currentTarget)
+    fetchNotifications({ page_size: 20 })
+  }
+
+  const handleCloseNotifications = () => {
+    setNotifAnchor(null)
+  }
+
+  const handleNotificationClick = async (notif) => {
+    if (!notif.is_read) {
+      await markRead(notif.id)
+    }
+    handleCloseNotifications()
+    if (notif.ticket_id) {
+      navigate(`/tickets/${notif.ticket_id}`)
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    await markAllRead()
+  }
 
   const handleLogout = () => {
     setAnchorEl(null)
@@ -60,12 +106,112 @@ export default function Topbar({ onMenuClick }) {
         </Tooltip>
 
         <Tooltip title="Notifications">
-          <IconButton aria-label="Notifications">
-            <Badge color="error" variant="dot">
+          <IconButton aria-label="Notifications" onClick={handleOpenNotifications}>
+            <Badge
+              badgeContent={unreadCount}
+              color="error"
+              max={99}
+              invisible={unreadCount === 0}
+            >
               <NotificationsNoneRounded />
             </Badge>
           </IconButton>
         </Tooltip>
+
+        {/* ── Notification dropdown ──────────────────────────────────── */}
+        <Popover
+          open={Boolean(notifAnchor)}
+          anchorEl={notifAnchor}
+          onClose={handleCloseNotifications}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 1,
+                width: 380,
+                maxHeight: 480,
+                borderRadius: 2,
+                boxShadow: 6,
+              },
+            },
+          }}
+        >
+          <Box sx={{ px: 2, py: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              Notifications
+            </Typography>
+            {unreadCount > 0 && (
+              <Tooltip title="Mark all as read">
+                <IconButton size="small" onClick={handleMarkAllRead} sx={{ color: "primary.main" }}>
+                  <DoneAll sx={{ fontSize: "1.1rem" }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+          <Divider />
+
+          {notifLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : notifications.length === 0 ? (
+            <Box sx={{ py: 4, textAlign: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                No notifications
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ maxHeight: 360, overflowY: "auto" }}>
+              {notifications.map((notif) => (
+                <Box
+                  key={notif.id}
+                  onClick={() => handleNotificationClick(notif)}
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 1.5,
+                    bgcolor: notif.is_read ? "transparent" : "action.hover",
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    transition: "background-color 0.15s ease",
+                    "&:hover": { bgcolor: "action.selected" },
+                    "&:last-child": { borderBottom: "none" },
+                  }}
+                >
+                  {!notif.is_read && (
+                    <Circle
+                      sx={{
+                        fontSize: "0.5rem",
+                        color: "primary.main",
+                        mt: 0.8,
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <Box sx={{ flex: 1, minWidth: 0, ml: notif.is_read ? 2 : 0 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: notif.is_read ? 400 : 600,
+                        lineHeight: 1.4,
+                        mb: 0.3,
+                      }}
+                    >
+                      {notif.message}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {formatRelativeTime(notif.created_at)}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Popover>
 
         <Box
           onClick={(e) => setAnchorEl(e.currentTarget)}

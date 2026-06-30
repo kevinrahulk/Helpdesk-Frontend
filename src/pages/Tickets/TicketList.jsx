@@ -40,12 +40,14 @@ export default function TicketList() {
 
   const { tickets, total, loading, error, fetch } = useTickets()
 
+  // Always refetch on mount to ensure fresh data after navigating back
   useEffect(() => {
     const params = {}
     if (filterStatus) params.status = filterStatus
     if (filterPriority) params.priority = filterPriority
     if (searchText.trim()) params.search = searchText.trim()
     fetch(params)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetch, filterStatus, filterPriority])
 
   const filtered = useMemo(() => {
@@ -55,6 +57,7 @@ export default function TicketList() {
       const q = searchText.toLowerCase()
       result = result.filter(
         (t) =>
+          (t.ticket_no ?? "").toLowerCase().includes(q) ||
           (t.id ?? "").toLowerCase().includes(q) ||
           (t.title ?? "").toLowerCase().includes(q) ||
           (t.description ?? "").toLowerCase().includes(q),
@@ -64,7 +67,7 @@ export default function TicketList() {
     if (sortBy === "recent") {
       result.sort((a, b) => new Date(b.created_at ?? b.createdAt) - new Date(a.created_at ?? a.createdAt))
     } else if (sortBy === "priority") {
-      const order = { Critical: 0, High: 1, Medium: 2, Low: 3 }
+      const order = { critical: 0, high: 1, medium: 2, low: 3 }
       result.sort((a, b) => (order[a.priority] ?? 99) - (order[b.priority] ?? 99))
     }
 

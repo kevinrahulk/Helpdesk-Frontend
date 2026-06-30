@@ -5,7 +5,6 @@ import ListItemButton from "@mui/material/ListItemButton"
 import ListItemIcon from "@mui/material/ListItemIcon"
 import ListItemText from "@mui/material/ListItemText"
 import Typography from "@mui/material/Typography"
-import Chip from "@mui/material/Chip"
 import {
   SpaceDashboardOutlined,
   AddCircleOutline,
@@ -18,6 +17,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../../../hooks/useAuth"
 import { navItemsForRole } from "../navConfig"
 import { roleLabels } from "../../utils/format"
+import Avatar from "../../components/Avatar/Avatar"
 import { SIDEBAR_WIDTH, drawerPaperSx, navButtonSx, brandSx } from "./style"
 
 const iconMap = {
@@ -29,7 +29,7 @@ const iconMap = {
 }
 
 function SidebarContent({ onNavigate }) {
-  const { role } = useAuth()
+  const { user, role } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const items = navItemsForRole(role)
@@ -91,11 +91,33 @@ function SidebarContent({ onNavigate }) {
       </Box>
 
       <Box sx={{ mt: "auto", p: 2 }}>
-        <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: "action.hover", display: "flex", alignItems: "center", gap: 1 }}>
-          <Chip label="Demo" size="small" color="primary" sx={{ height: 20, fontSize: "0.65rem" }} />
-          <Typography variant="caption" color="text.secondary">
-            {roleLabels[role]} view
-          </Typography>
+        <Box
+          sx={{
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: "action.hover",
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+            minWidth: 0,
+          }}
+        >
+          <Avatar name={user?.full_name} size="sm" />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{ fontWeight: 700, lineHeight: 1.2 }}
+            >
+              {user?.full_name ?? "—"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+              {roleLabels[role] ?? role}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+              {user?.email ?? ""}
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </>

@@ -14,7 +14,7 @@ import { formatDate, timeFromNow, isOverdue } from "../../utils/format"
 export function buildTicketColumns({ showRequester = true, showAssignee = true } = {}) {
   const columns = [
     {
-      field: "id",
+      field: "ticket_no",
       headerName: "Key",
       width: 110,
       renderCell: (params) => (
@@ -70,9 +70,9 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
       field: "requester",
       headerName: "Requester",
       width: 170,
-      valueGetter: (_val, row) => row.requester?.name ?? row.created_by_user?.name ?? "—",
+      valueGetter: (_val, row) => row.creator?.full_name ?? row.requester?.name ?? row.created_by_user?.name ?? "—",
       renderCell: (params) => {
-        const name = params.row.requester?.name ?? params.row.created_by_user?.name
+        const name = params.row.creator?.full_name ?? params.row.requester?.name ?? params.row.created_by_user?.name
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Avatar name={name} size="xs" />
@@ -90,9 +90,9 @@ export function buildTicketColumns({ showRequester = true, showAssignee = true }
       field: "assignee",
       headerName: "Assignee",
       width: 170,
-      valueGetter: (_val, row) => row.assignee?.name ?? row.assigned_to_user?.name ?? "Unassigned",
+      valueGetter: (_val, row) => row.assignee?.full_name ?? row.assigned_to_user?.name ?? "Unassigned",
       renderCell: (params) => {
-        const name = params.row.assignee?.name ?? params.row.assigned_to_user?.name
+        const name = params.row.assignee?.full_name ?? params.row.assigned_to_user?.name
         if (!name)
           return (
             <Typography variant="body2" color="text.secondary">

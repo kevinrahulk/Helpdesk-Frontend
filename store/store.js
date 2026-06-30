@@ -10,6 +10,7 @@ import categoriesReducer from "../slices/categoriesSlice"
 import dashboardReducer from "../slices/dashboardSlice"
 import reportsReducer from "../slices/reportsSlice"
 import aiReducer from "../slices/aiSlice"
+import notificationsReducer from "../slices/notificationsSlice"
 
 const store = configureStore({
   reducer: {
@@ -20,8 +21,10 @@ const store = configureStore({
     dashboard: dashboardReducer,
     reports: reportsReducer,
     ai: aiReducer,
+    notifications: notificationsReducer,
   },
   devTools: import.meta.env.MODE !== "production",
 })
 
 export default store
+

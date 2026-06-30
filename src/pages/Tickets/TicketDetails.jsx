@@ -15,11 +15,12 @@ import Alert from "@mui/material/Alert"
 import Tooltip from "@mui/material/Tooltip"
 import FormControlLabel from "@mui/material/FormControlLabel"
 import Switch from "@mui/material/Switch"
-import { ArrowBack, Edit, Send, Lock, LockOpen } from "@mui/icons-material"
+import { ArrowBack, Edit, Send, Lock, LockOpen, SpeakerNotesOff } from "@mui/icons-material"
 import { useAuth } from "../../../hooks/useAuth"
 import { useTicketDetail } from "../../../hooks/useTickets"
 import { useUsers } from "../../../hooks/useUsers"
 import { useAI } from "../../../hooks/useDomainHooks"
+import apiClient from "../../../api/apiClient"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import Button from "../../components/Button/Button"
 import Avatar from "../../components/Avatar/Avatar"
@@ -236,7 +237,7 @@ function CommentComposer({ onSubmit, mutating, isAgentOrAdmin }) {
 export default function TicketDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isAdmin, isAgentOrAdmin } = useAuth()
+  const { isAdmin, isEmployee, isAgentOrAdmin } = useAuth()
   const {
     ticket, loading, error, mutating, mutateError,
     fetchDetail, updateStatus, updateTicket, assign, addComment, clearDetail,
@@ -249,11 +250,27 @@ export default function TicketDetails() {
   const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState({ status: "", priority: "", agent_id: "" })
   const [saveError, setSaveError] = useState("")
+  const [commentsEnabled, setCommentsEnabled] = useState(true)
+  const [commentsCheckDone, setCommentsCheckDone] = useState(false)
 
   useEffect(() => {
     fetchDetail()
     if (isAgentOrAdmin) getTicketSummary(id)
     if (isAdmin) fetchAgents()
+    // Check employee comment permission
+    if (isEmployee) {
+      apiClient.get("/settings/comment-permissions")
+        .then(({ data }) => {
+          setCommentsEnabled(data.data?.employee_comments_enabled ?? true)
+          setCommentsCheckDone(true)
+        })
+        .catch(() => {
+          setCommentsEnabled(true)
+          setCommentsCheckDone(true)
+        })
+    } else {
+      setCommentsCheckDone(true)
+    }
     return () => clearDetail()
   }, [id])
 
@@ -483,12 +500,27 @@ export default function TicketDetails() {
                 </Box>
               )}
 
-              {/* Composer — visible to both employees and agents/admins */}
-              <CommentComposer
-                onSubmit={addComment}
-                mutating={mutating}
-                isAgentOrAdmin={isAgentOrAdmin}
-              />
+              {/* Composer — conditionally shown based on permissions */}
+              {isEmployee && !commentsEnabled ? (
+                <Alert
+                  severity="info"
+                  icon={<SpeakerNotesOff />}
+                  sx={{
+                    mt: 2,
+                    borderRadius: 2,
+                    bgcolor: "action.hover",
+                    "& .MuiAlert-message": { fontWeight: 500 },
+                  }}
+                >
+                  Comments have been disabled by the administrator.
+                </Alert>
+              ) : (
+                <CommentComposer
+                  onSubmit={addComment}
+                  mutating={mutating}
+                  isAgentOrAdmin={isAgentOrAdmin}
+                />
+              )}
             </CardContent>
           </Card>
         </Grid>
