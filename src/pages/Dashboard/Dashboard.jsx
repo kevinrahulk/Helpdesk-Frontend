@@ -17,8 +17,8 @@ import {
   CalendarToday,
   PersonOff,
 } from "@mui/icons-material"
-import { useAuth } from "../../../hooks/useAuth"
-import { useDashboard } from "../../../hooks/useDomainHooks"
+import { useAuth } from "../../hooks/useAuth"
+import { useDashboard } from "../../hooks/useDomainHooks"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import StatCard from "../../components/StatCard/StatCard"
 import SectionCard from "../../components/SectionCard/SectionCard"

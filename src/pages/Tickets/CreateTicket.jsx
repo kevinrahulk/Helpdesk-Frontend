@@ -18,8 +18,8 @@ import { ArrowBack, AutoAwesome, Send, Add } from "@mui/icons-material"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import Button from "../../components/Button/Button"
 import AIPanel, { AISection } from "../../components/AIPanel/AIPanel"
-import { useTickets } from "../../../hooks/useTickets"
-import { useCategories, useAI } from "../../../hooks/useDomainHooks"
+import { useTickets } from "../../hooks/useTickets"
+import { useCategories, useAI } from "../../hooks/useDomainHooks"
 
 const PRIORITIES = [
   { label: "Low", value: "low" },

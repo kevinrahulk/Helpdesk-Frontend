@@ -15,7 +15,7 @@ import {
   DarkModeOutlined,
 } from "@mui/icons-material"
 import { useNavigate, useLocation, Link } from "react-router-dom"
-import { useAuth } from "../../../hooks/useAuth"
+import { useAuth } from "../../hooks/useAuth"
 import { useColorMode } from "../../theme/ColorModeContext"
 import Button from "../../components/Button/Button"
 import InputBox from "../../components/InputBox/InputBox"

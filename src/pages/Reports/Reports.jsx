@@ -36,12 +36,12 @@ import {
 } from "@mui/icons-material"
 import { BarChart, PieChart, LineChart } from "@mui/x-charts"
 
-import { useReports } from "../../../hooks/useDomainHooks"
+import { useReports } from "../../hooks/useDomainHooks"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import StatCard from "../../components/StatCard/StatCard"
 import SectionCard from "../../components/SectionCard/SectionCard"
 import Button from "../../components/Button/Button"
-import apiClient from "../../../api/apiClient"
+import apiClient from "../../api/apiClient"
 
 const VOLUME_GROUPS = [
   { label: "Daily", value: "day" },

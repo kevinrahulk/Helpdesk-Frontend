@@ -25,8 +25,8 @@ import {
   DoneAll,
   Circle,
 } from "@mui/icons-material"
-import { useAuth } from "../../../hooks/useAuth"
-import { useNotifications } from "../../../hooks/useNotifications"
+import { useAuth } from "../../hooks/useAuth"
+import { useNotifications } from "../../hooks/useNotifications"
 import { useColorMode } from "../../theme/ColorModeContext"
 import { roleLabels, formatRelativeTime } from "../../utils/format"
 import Avatar from "../../components/Avatar/Avatar"

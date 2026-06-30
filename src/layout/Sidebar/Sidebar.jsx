@@ -14,7 +14,7 @@ import {
   SupportAgent,
 } from "@mui/icons-material"
 import { useLocation, useNavigate } from "react-router-dom"
-import { useAuth } from "../../../hooks/useAuth"
+import { useAuth } from "../../hooks/useAuth"
 import { navItemsForRole } from "../navConfig"
 import { roleLabels } from "../../utils/format"
 import Avatar from "../../components/Avatar/Avatar"

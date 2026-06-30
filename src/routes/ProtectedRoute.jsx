@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { selectIsAuthenticated, selectUserRole } from "../../slices/authSlice"
+import { selectIsAuthenticated, selectUserRole } from "../slices/authSlice"
 
 /** Guards authenticated routes and optionally restricts by role. */
 export default function ProtectedRoute({ children, allow }) {

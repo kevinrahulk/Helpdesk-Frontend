@@ -35,7 +35,7 @@ import {
 import PageHeader from "../../components/PageHeader/PageHeader"
 import Button from "../../components/Button/Button"
 import Avatar from "../../components/Avatar/Avatar"
-import { useUsers } from "../../../hooks/useUsers"
+import { useUsers } from "../../hooks/useUsers"
 import { formatDate } from "../../utils/format"
 
 // ── Create User Dialog ────────────────────────────────────────────────────────
