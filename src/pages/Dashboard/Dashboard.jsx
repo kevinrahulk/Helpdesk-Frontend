@@ -46,11 +46,12 @@ export default function Dashboard() {
   const recentTickets = data?.recent_tickets ?? data?.recently_assigned ?? []
 
   // Build stat values from the role-specific dashboard shape
+  // console.log("DATA:", data);
   const stats = {
     total: data?.total_tickets ?? 0,
     open: data?.open_tickets ?? data?.assigned_open ?? 0,
     inProgress: data?.in_progress_tickets ?? data?.assigned_in_progress ?? 0,
-    resolved: data?.resolved_tickets ?? 0,
+    resolved: data?.assigned_resolved ?? 0,
     closed: data?.closed_tickets ?? 0,
     sla: isEmployee
       ? (data?.waiting_tickets ?? 0)
@@ -114,7 +115,7 @@ export default function Dashboard() {
         />
         <StatCard
           label={isAdmin ? "Resolved" : "Resolved / Closed"}
-          value={isAdmin ? stats.resolved : stats.resolved + stats.closed}
+          value={isAdmin ? stats.resolved : stats.resolved}
           icon={<CheckCircle />}
           tone="success"
           onClick={() => navigate("/tickets?status=resolved")}
@@ -140,7 +141,7 @@ export default function Dashboard() {
               value={stats.unassigned}
               icon={<PersonOff />}
               tone="error"
-              onClick={() => navigate("/tickets")}
+              onClick={() => navigate("/tickets?assigned=unassigned")}
             />
             <StatCard
               label="Today's Tickets"

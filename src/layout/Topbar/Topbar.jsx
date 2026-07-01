@@ -92,10 +92,10 @@ export default function Topbar({ onMenuClick }) {
           <MenuRounded />
         </IconButton>
 
-        <Box sx={searchSx} role="search">
+        {/* <Box sx={searchSx} role="search">
           <SearchRounded sx={{ fontSize: "1.2rem" }} />
           <Typography variant="body2">Search tickets…</Typography>
-        </Box>
+        </Box> */}
 
         <Box sx={{ flexGrow: 1 }} />
 

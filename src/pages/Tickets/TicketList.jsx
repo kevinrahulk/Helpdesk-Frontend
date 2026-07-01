@@ -36,6 +36,7 @@ export default function TicketList() {
   const [searchText, setSearchText] = useState(searchParams.get("q") || "")
   const [filterStatus, setFilterStatus] = useState(searchParams.get("status") || "")
   const [filterPriority, setFilterPriority] = useState(searchParams.get("priority") || "")
+  const [filterAssigned, setFilterAssigned] = useState(searchParams.get("assigned") || "")
   const [sortBy, setSortBy] = useState("recent")
 
   const { tickets, total, loading, error, fetch } = useTickets()
@@ -45,10 +46,11 @@ export default function TicketList() {
     const params = {}
     if (filterStatus) params.status = filterStatus
     if (filterPriority) params.priority = filterPriority
+    if (filterAssigned) params.assigned = filterAssigned
     if (searchText.trim()) params.search = searchText.trim()
     fetch(params)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetch, filterStatus, filterPriority])
+  }, [fetch, filterStatus, filterPriority, filterAssigned])
 
   const filtered = useMemo(() => {
     let result = [...tickets]
@@ -87,12 +89,13 @@ export default function TicketList() {
     setSearchText("")
     setFilterStatus("")
     setFilterPriority("")
+    setFilterAssigned("")
     setSortBy("recent")
     setSearchParams({})
     fetch({})
   }
 
-  const hasFilters = searchText || filterStatus || filterPriority || sortBy !== "recent"
+  const hasFilters = searchText || filterStatus || filterPriority || filterAssigned || sortBy !== "recent"
 
   return (
     <Box>
@@ -187,7 +190,7 @@ export default function TicketList() {
           )}
         </Grid>
 
-        {(searchText || filterStatus || filterPriority) && (
+        {(searchText || filterStatus || filterPriority || filterAssigned) && (
           <Box sx={{ mt: 2, display: "flex", gap: 1, flexWrap: "wrap" }}>
             {searchText && (
               <Chip size="small" label={`Search: "${searchText}"`} onDelete={() => setSearchText("")} variant="outlined" />
@@ -197,6 +200,9 @@ export default function TicketList() {
             )}
             {filterPriority && (
               <Chip size="small" label={`Priority: ${filterPriority}`} onDelete={() => setFilterPriority("")} variant="outlined" />
+            )}
+            {filterAssigned && (
+              <Chip size="small" label="Unassigned only" onDelete={() => setFilterAssigned("")} variant="outlined" />
             )}
           </Box>
         )}
