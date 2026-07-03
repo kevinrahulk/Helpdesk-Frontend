@@ -268,6 +268,7 @@ export default function TicketDetails() {
     ticket, loading, error, mutating, mutateError,
     fetchDetail, updateStatus, updateTicket, assign, addComment, clearDetail,
   } = useTicketDetail(id)
+  console.log("TICKET:", ticket);
   const { summary, summaryLoading, getTicketSummary } = useAI(id)
 
   // Agents list for admin assign dropdown
@@ -542,7 +543,7 @@ export default function TicketDetails() {
                             bgcolor: "action.hover",
                           },
                         }}
-                        onClick={() => navigate(`/tickets?search=${encodeURIComponent(item.ticket_no)}`)}
+                        onClick={() => navigate(`/tickets/${item.ticket_id || item.id}`)}
                       >
                         <Typography variant="caption" color="primary.main" sx={{ fontWeight: 700, display: "block" }}>
                           {item.ticket_no}
