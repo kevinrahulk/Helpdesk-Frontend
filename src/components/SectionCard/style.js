@@ -1,7 +1,9 @@
 // Padding presets for the reusable SectionCard surface.
+import { spacing } from "../../theme/tokens"
+
 export const cardPadding = {
   sm: 2,
-  md: 2.5,
+  md: spacing.panelPadding,
   lg: 3,
 }
 

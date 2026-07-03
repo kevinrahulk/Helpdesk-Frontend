@@ -36,3 +36,11 @@ export const radius = {
   lg: 12,
   xl: 16,
 }
+
+// Shared vertical rhythm between stacked surfaces (AIPanel / SectionCard /
+// Card). Keeping this in one place stops each page from picking its own
+// ad-hoc mb/mt value alongside a panel's own internal padding.
+export const spacing = {
+  panelGap: 3,      // gap between stacked panels/cards on a page
+  panelPadding: 2.5, // internal padding for AIPanel / SectionCard "md"
+}

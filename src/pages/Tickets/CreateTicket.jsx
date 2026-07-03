@@ -18,6 +18,8 @@ import { ArrowBack, AutoAwesome, Send, Add } from "@mui/icons-material"
 import PageHeader from "../../components/PageHeader/PageHeader"
 import Button from "../../components/Button/Button"
 import AIPanel, { AISection } from "../../components/AIPanel/AIPanel"
+import FirstFixSteps from "../../components/AIPanel/FirstFixSteps"
+import { spacing } from "../../theme/tokens"
 import { useTickets } from "../../hooks/useTickets"
 import { useCategories, useAI } from "../../hooks/useDomainHooks"
 
@@ -95,6 +97,7 @@ export default function CreateTicket() {
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState("")   // ← local error for submit failures
   const [createCatOpen, setCreateCatOpen] = useState(false)
+  const [suggestionApplied, setSuggestionApplied] = useState(false)
 
   useEffect(() => {
     fetchCategories()
@@ -127,6 +130,7 @@ export default function CreateTicket() {
       return
     }
     getSuggestion({ title: formData.title, description: formData.description })
+    setSuggestionApplied(false)
   }
 
   const handleCreateCategory = async (payload) => {
@@ -149,7 +153,12 @@ export default function CreateTicket() {
       // suggested_priority comes lowercase from backend
       priority: suggestion.suggested_priority?.toLowerCase() ?? prev.priority,
     }))
-    clearSuggestion()
+    // Note: intentionally NOT calling clearSuggestion() here. The suggestion
+    // (summary, first-fix steps, similar tickets) stays visible and is still
+    // submitted with the ticket — it's only cleared once the ticket is
+    // actually created, the user dismisses it explicitly, or navigates away
+    // (see the unmount cleanup below and handleSubmit).
+    setSuggestionApplied(true)
   }
 
   const handleSubmit = async (e) => {
@@ -166,9 +175,14 @@ export default function CreateTicket() {
       category_id: formData.category_id,
       priority: formData.priority,   // already lowercase
       ...(suggestion?.suggestion_id && { ai_suggestion_id: suggestion.suggestion_id }),
+      ai_summary: suggestion?.summary,
+      ai_first_fix: suggestion?.first_fix?.length > 0 ? { steps: suggestion.first_fix } : undefined,
+      ai_similar_tickets: suggestion?.similar_tickets,
     }
     const result = await createTicket(payload)
     if (result.success) {
+      // Ticket exists now — the suggestion has served its purpose.
+      clearSuggestion()
       navigate("/tickets?status=open")
     } else {
       // Surface the error clearly instead of showing a blank screen
@@ -344,23 +358,30 @@ export default function CreateTicket() {
                   <Chip label={suggestion.suggested_priority} color="error" variant="outlined" />
                 </AISection>
 
-                {suggestion.first_fix && (
-                  <AISection label="First Fix">{suggestion.first_fix}</AISection>
+                {(suggestion.first_fix?.length > 0 || suggestion.degraded) && (
+                  <AISection label="First Fix">
+                    <FirstFixSteps steps={suggestion.first_fix} degraded={suggestion.degraded} />
+                  </AISection>
                 )}
 
                 <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
-                  <Button size="sm" fullWidth onClick={handleApplySuggestions}>
-                    Apply
+                  <Button size="sm" fullWidth onClick={handleApplySuggestions} disabled={suggestionApplied}>
+                    {suggestionApplied ? "Applied" : "Apply"}
                   </Button>
-                  <Button size="sm" fullWidth variant="outlined" onClick={() => clearSuggestion()}>
+                  <Button size="sm" fullWidth variant="outlined" onClick={() => { clearSuggestion(); setSuggestionApplied(false) }}>
                     Dismiss
                   </Button>
                 </Box>
+                {suggestionApplied && (
+                  <Typography variant="caption" color="success.main" sx={{ display: "block", mt: 1 }}>
+                    Applied to the form — it'll be submitted with this ticket.
+                  </Typography>
+                )}
               </Box>
             )}
           </AIPanel>
 
-          <Card sx={{ mt: 3 }}>
+          <Card sx={{ mt: spacing.panelGap }}>
             <CardContent>
               <Typography variant="caption" sx={{ textTransform: "uppercase", fontWeight: 700, color: "text.secondary", display: "block", mb: 1 }}>
                 Tips for better results

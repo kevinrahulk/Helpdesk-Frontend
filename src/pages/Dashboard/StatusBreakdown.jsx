@@ -13,14 +13,24 @@ const STATUSES = [
   { label: "Closed", value: "closed" },
 ]
 /** Simple status distribution list with proportion bars. */
-export default function StatusBreakdown({ tickets, statuses = STATUSES }) {
+export default function StatusBreakdown({ tickets, statusCounts, statuses = STATUSES }) {
   const { mode } = useColorMode()
-  const total = tickets.length || 1
+
+  let counts = {}
+  if (statusCounts) {
+    counts = statusCounts
+  } else if (tickets) {
+    statuses.forEach((status) => {
+      counts[status.value] = tickets.filter((t) => t.status === status.value).length
+    })
+  }
+
+  const total = Object.values(counts).reduce((sum, val) => sum + val, 0) || 1
 
   return (
     <Box>
       {statuses.map((status) => {
-        const count = tickets.filter((t) => t.status === status.value).length
+        const count = counts[status.value] ?? 0
         const pct = Math.round((count / total) * 100)
         const s = statusStyle(status.value, mode)
         return (

@@ -26,6 +26,8 @@ import Button from "../../components/Button/Button"
 import Avatar from "../../components/Avatar/Avatar"
 import { StatusBadge, PriorityBadge } from "../../components/StatusBadge/StatusBadge"
 import AIPanel, { AISection } from "../../components/AIPanel/AIPanel"
+import FirstFixSteps from "../../components/AIPanel/FirstFixSteps"
+import { spacing } from "../../theme/tokens"
 import { formatDate, formatRelativeTime, formatDateTime } from "../../utils/format"
 
 const STATUSES = [
@@ -233,6 +235,30 @@ function CommentComposer({ onSubmit, mutating, isAgentOrAdmin }) {
   )
 }
 
+// Ticket.ai_first_fix is persisted as either a raw JSON string or an
+// already-parsed { steps: [...] } object depending on how it was written —
+// normalize both shapes into a plain steps array here, once, so the render
+// below can guard on `.length > 0` instead of re-parsing inline.
+function parseFirstFixSteps(raw) {
+  if (!raw) return []
+  try {
+    const fixObj = typeof raw === "string" ? JSON.parse(raw) : raw
+    return Array.isArray(fixObj?.steps) ? fixObj.steps : []
+  } catch {
+    return []
+  }
+}
+
+function parseSimilarTickets(raw) {
+  if (!raw) return []
+  try {
+    const list = typeof raw === "string" ? JSON.parse(raw) : raw
+    return Array.isArray(list) ? list : []
+  } catch {
+    return []
+  }
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function TicketDetails() {
   const { id } = useParams()
@@ -258,6 +284,7 @@ export default function TicketDetails() {
     if (isAgentOrAdmin) getTicketSummary(id)
     if (isAdmin) fetchAgents()
     // Check employee comment permission
+
     if (isEmployee) {
       apiClient.get("/settings/comment-permissions")
         .then(({ data }) => {
@@ -276,13 +303,27 @@ export default function TicketDetails() {
 
   useEffect(() => {
     if (ticket) {
-      setFormData({
-        status: ticket.status ?? "",
-        priority: ticket.priority ?? "",
-        agent_id: ticket.assigned_to ?? "",
-      })
+      if (!editMode) {
+        setFormData({
+          status: ticket.status ?? "",
+          priority: ticket.priority ?? "",
+          agent_id: ticket.assigned_to ?? "",
+        })
+      }
+
+      // Polling for background AI updates
+      const updatedAt = new Date(ticket.updated_at || ticket.createdAt);
+      const aiUpdatedAt = ticket.last_ai_updated_at ? new Date(ticket.last_ai_updated_at) : new Date(0);
+
+      // If AI hasn't updated since the ticket was updated (give it a 1s buffer), poll after 2 seconds
+      if (aiUpdatedAt < new Date(updatedAt.getTime() - 1000)) {
+        const timer = setTimeout(() => {
+          fetchDetail()
+        }, 2500)
+        return () => clearTimeout(timer)
+      }
     }
-  }, [ticket])
+  }, [ticket, fetchDetail, editMode])
 
   const handleSaveChanges = async () => {
     setSaveError("")
@@ -466,21 +507,59 @@ export default function TicketDetails() {
             </CardContent>
           </Card>
 
-          {/* AI insights (agent/admin) */}
-          {isAgentOrAdmin && (
-            <AIPanel title="AI Insights" loading={summaryLoading} sx={{ mb: 3 }}>
-              {summary && (
-                <>
-                  {summary.summary && <AISection label="Summary">{summary.summary}</AISection>}
-                  {summary.root_cause && <AISection label="Root Cause">{summary.root_cause}</AISection>}
-                  {summary.suggested_reply && <AISection label="Suggested Reply">{summary.suggested_reply}</AISection>}
-                </>
+          {/* AI insights */}
+          {(isAgentOrAdmin && (ticket?.ai_summary || ticket?.ai_first_fix || summary)) && (
+            <AIPanel title="AI Insights" loading={summaryLoading} sx={{ mb: spacing.panelGap }}>
+              {(ticket?.ai_summary || summary?.summary) && (
+                <AISection label="Summary">{ticket?.ai_summary || summary?.summary}</AISection>
+              )}
+              {ticket?.ai_first_fix != null && (
+                <AISection label="First Fix">
+                  <FirstFixSteps
+                    steps={parseFirstFixSteps(ticket.ai_first_fix)}
+                    degraded={parseFirstFixSteps(ticket.ai_first_fix).length === 0}
+                  />
+                </AISection>
+              )}
+              {(!(parseFirstFixSteps(ticket?.ai_first_fix).length > 0) && summary?.suggested_reply) && (
+                <AISection label="Suggested Reply">{summary.suggested_reply}</AISection>
+              )}
+              {parseSimilarTickets(ticket?.ai_similar_tickets || summary?.similar_tickets).length > 0 && (
+                <AISection label="Similar Tickets">
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {parseSimilarTickets(ticket?.ai_similar_tickets || summary?.similar_tickets).map((item, idx) => (
+                      <Paper
+                        key={idx}
+                        variant="outlined"
+                        sx={{
+                          p: 1.25,
+                          borderRadius: 1,
+                          cursor: "pointer",
+                          transition: "all 0.2s",
+                          borderColor: "divider",
+                          "&:hover": {
+                            borderColor: "primary.main",
+                            bgcolor: "action.hover",
+                          },
+                        }}
+                        onClick={() => navigate(`/tickets?search=${encodeURIComponent(item.ticket_no)}`)}
+                      >
+                        <Typography variant="caption" color="primary.main" sx={{ fontWeight: 700, display: "block" }}>
+                          {item.ticket_no}
+                        </Typography>
+                        <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500, mt: 0.25 }}>
+                          {item.title}
+                        </Typography>
+                      </Paper>
+                    ))}
+                  </Box>
+                </AISection>
               )}
             </AIPanel>
           )}
 
           {/* ── Comments section ──────────────────────────────────────────── */}
-          <Card sx={{ mt: 3 }}>
+          <Card sx={{ mt: spacing.panelGap }}>
             <CardContent>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
                 Comments {comments.length > 0 && (

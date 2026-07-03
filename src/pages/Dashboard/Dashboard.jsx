@@ -46,15 +46,15 @@ export default function Dashboard() {
   const recentTickets = data?.recent_tickets ?? data?.recently_assigned ?? []
 
   // Build stat values from the role-specific dashboard shape
-  // console.log("DATA:", data);
+  console.log("DATA:", data);
   const stats = {
     total: data?.total_tickets ?? 0,
     open: data?.open_tickets ?? data?.assigned_open ?? 0,
     inProgress: data?.in_progress_tickets ?? data?.assigned_in_progress ?? 0,
-    resolved: data?.assigned_resolved ?? 0,
+    resolved: data?.assigned_resolved ?? data?.resolved_tickets ?? 0,
     closed: data?.closed_tickets ?? 0,
-    sla: isEmployee
-      ? (data?.waiting_tickets ?? 0)
+    sla: !isAdmin
+      ? (data?.waiting_for_user_tickets ?? 0)
       : (data?.overdue_tickets ?? data?.sla_breached ?? 0),
     highPriority: data?.high_priority_tickets ?? 0,
     unassigned: data?.unassigned_tickets ?? 0,
@@ -121,11 +121,15 @@ export default function Dashboard() {
           onClick={() => navigate("/tickets?status=resolved")}
         />
         <StatCard
-          label={isEmployee ? "Awaiting your reply" : "SLA Breached"}
+          label={isEmployee ? "Awaiting your reply" : !isAdmin ? "Waiting for User Reply" : "SLA Breached"}
           value={stats.sla}
           icon={<WarningAmberRounded />}
           tone={isEmployee ? "warning" : "error"}
-          onClick={() => navigate("/tickets")}
+          onClick={() => navigate(
+            !isAdmin ?
+              "/tickets?status=waiting_for_user"
+              : "/tickets"
+          )}
         />
         {isAdmin && (
           <>
@@ -174,7 +178,7 @@ export default function Dashboard() {
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
           <SectionCard title="Status breakdown" icon={<TrendingUp sx={{ fontSize: "1.1rem", color: "text.secondary" }} />}>
-            <StatusBreakdown tickets={statusRows} />
+            <StatusBreakdown statusCounts={data?.status_counts} />
           </SectionCard>
 
           <SectionCard
