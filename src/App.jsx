@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom"
+import { createBrowserRouter, createRoutesFromElements, Route, Navigate } from "react-router-dom"
 import ProtectedRoute from "./routes/ProtectedRoute"
 import AppLayout from "./layout/AppLayout"
 import Login from "./pages/Login/Login"
@@ -10,9 +10,9 @@ import CreateTicket from "./pages/Tickets/CreateTicket"
 import UserManagement from "./pages/UserManagement/UserManagement"
 import Reports from "./pages/Reports/Reports"
 
-export default function App() {
-  return (
-    <Routes>
+export const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
 
@@ -54,6 +54,10 @@ export default function App() {
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    </Route>
   )
+)
+
+export default function App() {
+  return null
 }

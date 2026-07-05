@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useBlocker } from "react-router-dom"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid2"
 import Card from "@mui/material/Card"
@@ -98,6 +98,31 @@ export default function CreateTicket() {
   const [submitError, setSubmitError] = useState("")   // ← local error for submit failures
   const [createCatOpen, setCreateCatOpen] = useState(false)
   const [suggestionApplied, setSuggestionApplied] = useState(false)
+  const [dismissedValues, setDismissedValues] = useState({ title: "", description: "" })
+
+  const isDirty = (formData.title.trim() !== "" || formData.description.trim() !== "") &&
+    (formData.title !== dismissedValues.title || formData.description !== dismissedValues.description);
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && nextLocation.pathname !== currentLocation.pathname
+  );
+
+  const handleConfirmLeave = () => {
+    if (blocker.state === "blocked") {
+      blocker.proceed()
+    }
+  }
+
+  const handleCancelLeave = () => {
+    if (blocker.state === "blocked") {
+      setDismissedValues({
+        title: formData.title,
+        description: formData.description,
+      })
+      blocker.reset()
+    }
+  }
 
   useEffect(() => {
     fetchCategories()
@@ -199,6 +224,10 @@ export default function CreateTicket() {
     if (result.success) {
       // Ticket exists now — the suggestion has served its purpose.
       clearSuggestion()
+      setDismissedValues({
+        title: formData.title,
+        description: formData.description,
+      })
       navigate("/tickets?status=open")
     } else {
       // Surface the error clearly instead of showing a blank screen
@@ -419,6 +448,23 @@ export default function CreateTicket() {
         onClose={() => setCreateCatOpen(false)}
         onCreate={handleCreateCategory}
         loading={catMutating}
-        error={catMutateError} /></>
+        error={catMutateError} />
+      <Dialog open={blocker.state === "blocked"} onClose={handleCancelLeave} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Unsaved Changes</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            You have unsaved changes in your ticket. If you leave, these changes will be lost.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button variant="outlined" onClick={handleCancelLeave}>
+            Stay on Page
+          </Button>
+          <Button onClick={handleConfirmLeave} color="error">
+            Leave Page
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 }
