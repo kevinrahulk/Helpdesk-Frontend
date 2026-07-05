@@ -311,20 +311,8 @@ export default function TicketDetails() {
           agent_id: ticket.assigned_to ?? "",
         })
       }
-
-      // Polling for background AI updates
-      const updatedAt = new Date(ticket.updated_at || ticket.createdAt);
-      const aiUpdatedAt = ticket.last_ai_updated_at ? new Date(ticket.last_ai_updated_at) : new Date(0);
-
-      // If AI hasn't updated since the ticket was updated (give it a 1s buffer), poll after 2 seconds
-      if (aiUpdatedAt < new Date(updatedAt.getTime() - 1000)) {
-        const timer = setTimeout(() => {
-          fetchDetail()
-        }, 2500)
-        return () => clearTimeout(timer)
-      }
     }
-  }, [ticket, fetchDetail, editMode])
+  }, [ticket, editMode])
 
   const handleSaveChanges = async () => {
     setSaveError("")

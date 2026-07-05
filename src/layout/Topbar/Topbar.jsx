@@ -49,11 +49,9 @@ export default function Topbar({ onMenuClick }) {
     markAllRead,
   } = useNotifications()
 
-  // Poll for unread count every 30 seconds
+  // Fetch unread count on mount
   useEffect(() => {
     fetchCount()
-    const interval = setInterval(fetchCount, 30_000)
-    return () => clearInterval(interval)
   }, [fetchCount])
 
   const handleOpenNotifications = (e) => {
