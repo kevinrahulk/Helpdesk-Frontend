@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useNavigate, useBlocker } from "react-router-dom"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid2"
@@ -100,12 +100,14 @@ export default function CreateTicket() {
   const [suggestionApplied, setSuggestionApplied] = useState(false)
   const [dismissedValues, setDismissedValues] = useState({ title: "", description: "" })
 
+  const isSubmittingRef = useRef(false);
+
   const isDirty = (formData.title.trim() !== "" || formData.description.trim() !== "") &&
     (formData.title !== dismissedValues.title || formData.description !== dismissedValues.description);
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      isDirty && nextLocation.pathname !== currentLocation.pathname
+      isDirty && !isSubmittingRef.current && nextLocation.pathname !== currentLocation.pathname
   );
 
   const handleConfirmLeave = () => {
@@ -220,6 +222,7 @@ export default function CreateTicket() {
       // they're generated once, server-side, right after the ticket is actually
       // created, and cached on the ticket for every later view.
     }
+    isSubmittingRef.current = true
     const result = await createTicket(payload)
     if (result.success) {
       // Ticket exists now — the suggestion has served its purpose.
@@ -230,6 +233,7 @@ export default function CreateTicket() {
       })
       navigate("/tickets?status=open")
     } else {
+      isSubmittingRef.current = false
       // Surface the error clearly instead of showing a blank screen
       setSubmitError(
         typeof result.error === "string"
