@@ -42,6 +42,8 @@ import StatCard from "../../components/StatCard/StatCard"
 import SectionCard from "../../components/SectionCard/SectionCard"
 import Button from "../../components/Button/Button"
 import apiClient from "../../api/apiClient"
+import AgentPerformanceTable from "./components/AgentPerformanceTable"
+import EmployeeActivitySection from "./components/EmployeeActivitySection"
 
 const VOLUME_GROUPS = [
   { label: "Daily", value: "day" },
@@ -420,70 +422,7 @@ export default function Reports() {
             title="Employee Activity"
             icon={<People sx={{ fontSize: "1.1rem", color: "text.secondary" }} />}
           >
-            {employeeLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-                <CircularProgress size={28} />
-              </Box>
-            ) : employeeActivity ? (
-              <Box>
-                <Box sx={{ display: "flex", gap: 3, mb: 3 }}>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: "primary.main" }}>
-                      {employeeActivity.total_tickets_created}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">Total Created</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography variant="h4" sx={{ fontWeight: 700, color: "info.main" }}>
-                      {employeeActivity.active_employees}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">Active Employees</Typography>
-                  </Box>
-                </Box>
-
-                {employeeActivity.most_active?.length > 0 && (
-                  <>
-                    <Divider sx={{ mb: 2 }} />
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block", fontWeight: 600 }}>
-                      Most Active Requesters
-                    </Typography>
-                    {employeeActivity.most_active.slice(0, 5).map((emp) => (
-                      <Box
-                        key={emp.employee_id}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          py: 0.8,
-                          borderBottom: "1px solid",
-                          borderColor: "divider",
-                          "&:last-child": { borderBottom: "none" },
-                        }}
-                      >
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {emp.employee_name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {emp.employee_email}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label={`${emp.tickets_created} tickets`}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontWeight: 600 }}
-                        />
-                      </Box>
-                    ))}
-                  </>
-                )}
-              </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-                No employee data
-              </Typography>
-            )}
+            <EmployeeActivitySection loading={employeeLoading} data={employeeActivity} />
           </SectionCard>
         </Grid>
       </Grid>
@@ -494,75 +433,7 @@ export default function Reports() {
         icon={<Assessment sx={{ fontSize: "1.1rem", color: "text.secondary" }} />}
         sx={{ mb: 4 }}
       >
-        {agentPerformanceLoading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
-        ) : agentPerformance.length > 0 ? (
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: "action.hover" }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Agent</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700 }}>Assigned</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700 }}>Resolved</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700 }}>Open</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700 }}>Avg Resolution</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 700 }}>SLA Compliance</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {agentPerformance.map((agent) => (
-                  <TableRow
-                    key={agent.agent_id}
-                    sx={{ "&:hover": { bgcolor: "action.hover" } }}
-                  >
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {agent.agent_name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {agent.agent_email}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip label={agent.assigned_tickets} size="small" variant="outlined" />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip label={agent.resolved_tickets} size="small" color="success" variant="outlined" />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip label={agent.open_tickets} size="small" color="info" variant="outlined" />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Typography variant="body2">
-                        {agent.avg_resolution_hours != null ? `${agent.avg_resolution_hours}h` : "—"}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      {agent.sla_compliance_pct != null ? (
-                        <Chip
-                          label={`${agent.sla_compliance_pct}%`}
-                          size="small"
-                          color={agent.sla_compliance_pct >= 80 ? "success" : agent.sla_compliance_pct >= 50 ? "warning" : "error"}
-                          sx={{ fontWeight: 700 }}
-                        />
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">—</Typography>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-            No agent performance data available
-          </Typography>
-        )}
+        <AgentPerformanceTable loading={agentPerformanceLoading} data={agentPerformance} />
       </SectionCard>
     </Box>
   )

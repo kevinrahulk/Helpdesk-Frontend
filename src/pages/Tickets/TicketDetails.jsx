@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import Box from "@mui/material/Box"
 import Grid from "@mui/material/Grid2"
@@ -12,10 +12,7 @@ import Chip from "@mui/material/Chip"
 import Paper from "@mui/material/Paper"
 import CircularProgress from "@mui/material/CircularProgress"
 import Alert from "@mui/material/Alert"
-import Tooltip from "@mui/material/Tooltip"
-import FormControlLabel from "@mui/material/FormControlLabel"
-import Switch from "@mui/material/Switch"
-import { ArrowBack, Edit, Send, Lock, LockOpen, SpeakerNotesOff } from "@mui/icons-material"
+import { ArrowBack, Edit, SpeakerNotesOff } from "@mui/icons-material"
 import { useAuth } from "../../hooks/useAuth"
 import { useTicketDetail } from "../../hooks/useTickets"
 import { useUsers } from "../../hooks/useUsers"
@@ -29,6 +26,8 @@ import AIPanel, { AISection } from "../../components/AIPanel/AIPanel"
 import FirstFixSteps from "../../components/AIPanel/FirstFixSteps"
 import { spacing } from "../../theme/tokens"
 import { formatDate, formatRelativeTime, formatDateTime } from "../../utils/format"
+import CommentBubble from "./components/CommentBubble"
+import CommentComposer from "./components/CommentComposer"
 
 const STATUSES = [
   { label: "Open", value: "open" },
@@ -45,200 +44,6 @@ const PRIORITIES = [
   { label: "Critical", value: "critical" },
 ]
 
-// ── Comment bubble ────────────────────────────────────────────────────────────
-function CommentBubble({ comment, isAgentOrAdmin }) {
-  const author = comment.author ?? {}
-  const name = author.full_name ?? author.name ?? "Unknown"
-  const isInternal = comment.is_internal
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 2,
-        p: 2,
-        mb: 2,
-        border: isInternal ? "1px dashed" : "1px solid",
-        borderColor: isInternal ? "warning.light" : "divider",
-        borderRadius: 2,
-        bgcolor: isInternal ? "warning.50" : "background.paper",
-        transition: "all .2s ease",
-        "&:hover": {
-          boxShadow: 1,
-          bgcolor: isInternal ? "warning.100" : "grey.50",
-        },
-      }}
-    >
-      <Avatar name={name} size="sm" />
-
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        {/* Header */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 1,
-            mb: 1,
-          }}
-        >
-          <Typography
-            variant="subtitle2"
-            sx={{
-              fontWeight: 700,
-            }}
-          >
-            {name}
-          </Typography>
-
-          {author.role && (
-            <Chip
-              label={author.role}
-              size="small"
-              variant="outlined"
-              sx={{
-                height: 22,
-                fontSize: "0.7rem",
-                textTransform: "capitalize",
-              }}
-            />
-          )}
-
-          {isInternal && isAgentOrAdmin && (
-            <Chip
-              icon={<Lock sx={{ fontSize: "0.8rem !important" }} />}
-              label="Internal"
-              size="small"
-              color="warning"
-              sx={{
-                height: 22,
-                fontSize: "0.7rem",
-              }}
-            />
-          )}
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{
-              ml: "auto",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {formatRelativeTime(comment.created_at)}
-          </Typography>
-        </Box>
-
-        {/* Message */}
-        <Typography
-          variant="body2"
-          sx={{
-            lineHeight: 1.8,
-            color: "text.primary",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}
-        >
-          {comment.body}
-        </Typography>
-      </Box>
-    </Box>
-  )
-}
-
-// ── Comment composer ──────────────────────────────────────────────────────────
-function CommentComposer({ onSubmit, mutating, isAgentOrAdmin }) {
-  const [body, setBody] = useState("")
-  const [isInternal, setIsInternal] = useState(false)
-  const [error, setError] = useState("")
-  const textRef = useRef(null)
-
-  const handleSubmit = async () => {
-    if (!body.trim()) { setError("Comment cannot be empty."); return }
-    setError("")
-    const result = await onSubmit({ body: body.trim(), is_internal: isInternal })
-    if (result?.success) {
-      setBody("")
-      setIsInternal(false)
-    } else if (result?.error) {
-      setError(typeof result.error === "string" ? result.error : "Failed to post comment.")
-    }
-  }
-
-  return (
-    <Box sx={{ mt: 2 }}>
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
-        Add a Comment
-      </Typography>
-      {error && <Alert severity="error" sx={{ mb: 1.5 }}>{error}</Alert>}
-      <TextField
-        fullWidth
-        multiline
-        rows={3}
-        placeholder={isInternal ? "Write an internal note (not visible to employee)…" : "Write a reply or update…"}
-        value={body}
-        onChange={(e) => { setBody(e.target.value); if (error) setError("") }}
-        inputRef={textRef}
-        size="small"
-        sx={{
-          mb: 1.5,
-          "& .MuiOutlinedInput-root": { borderRadius: 1 },
-          ...(isInternal && {
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 1,
-              bgcolor: "warning.lighter",
-              borderColor: "warning.light",
-            },
-          }),
-        }}
-      />
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-        <Button
-          startIcon={<Send />}
-          loading={mutating}
-          onClick={handleSubmit}
-          disabled={!body.trim()}
-        >
-          {isInternal ? "Post Internal Note" : "Post Comment"}
-        </Button>
-
-        {/* Internal toggle: only agents and admins see this */}
-        {isAgentOrAdmin && (
-          <Tooltip title={isInternal ? "Only agents and admins can see internal notes" : "Make this an internal-only note"}>
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  checked={isInternal}
-                  onChange={(e) => setIsInternal(e.target.checked)}
-                  color="warning"
-                />
-              }
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  {isInternal
-                    ? <Lock sx={{ fontSize: "0.9rem", color: "warning.main" }} />
-                    : <LockOpen sx={{ fontSize: "0.9rem", color: "text.secondary" }} />}
-                  <Typography variant="caption" color={isInternal ? "warning.main" : "text.secondary"}>
-                    {isInternal ? "Internal note" : "Public reply"}
-                  </Typography>
-                </Box>
-              }
-              sx={{ m: 0 }}
-            />
-          </Tooltip>
-        )}
-      </Box>
-    </Box>
-  )
-}
-
-// Ticket.ai_first_fix is persisted as either a raw JSON string or an
-// already-parsed { steps: [...] } object depending on how it was written —
-// normalize both shapes into a plain steps array here, once, so the render
-// below can guard on `.length > 0` instead of re-parsing inline.
 function parseFirstFixSteps(raw) {
   if (!raw) return []
   try {
@@ -268,7 +73,7 @@ export default function TicketDetails() {
     ticket, loading, error, mutating, mutateError,
     fetchDetail, updateStatus, updateTicket, assign, addComment, clearDetail,
   } = useTicketDetail(id)
-  console.log("TICKET:", ticket);
+  // console.log("TICKET:", ticket);
   const { summary, summaryLoading, getTicketSummary } = useAI(id)
 
   // Agents list for admin assign dropdown
