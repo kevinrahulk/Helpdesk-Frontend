@@ -1,20 +1,4 @@
-/**
- * ticketsSlice — Ticket CRUD + lifecycle management
- *
- * Covers all /tickets endpoints:
- *   POST   /tickets                        → createTicket
- *   GET    /tickets                        → fetchTickets  (paginated, filtered)
- *   GET    /tickets/:id                    → fetchTicketById
- *   PATCH  /tickets/:id                    → updateTicket
- *   PATCH  /tickets/:id/status             → updateTicketStatus
- *   PATCH  /tickets/:id/assign             → assignTicket
- *   GET    /tickets/:id/logs               → fetchTicketLogs
- *   POST   /tickets/:id/comments           → addComment
- *   GET    /tickets/:id/comments           → fetchComments
- *   PATCH  /tickets/:id/comments/:cid      → updateComment
- *   POST   /tickets/:id/attachments        → addAttachment
- *   GET    /tickets/:id/attachments        → fetchAttachments
- */
+
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"

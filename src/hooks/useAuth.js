@@ -1,11 +1,4 @@
-/**
- * useAuth — Authentication hook
- *
- * Wraps authSlice to give components a clean, imperative API.
- *
- * Usage:
- *   const { user, role, isAuthenticated, loading, error, login, logout, fetchProfile } = useAuth()
- */
+
 
 import { useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"

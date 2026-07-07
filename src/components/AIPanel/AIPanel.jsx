@@ -21,16 +21,19 @@ import { aiSurfaceSx, aiHeaderSx, aiBodySx } from "./style"
  *   aren't silently dropped when this panel is stacked with other surfaces.
  */
 export default function AIPanel({ title = "AI Assistant", loading, error, children, sx, ...rest }) {
+  const hasContent = !!children;
+
   return (
     <Box sx={[aiSurfaceSx, ...(Array.isArray(sx) ? sx : [sx])]} {...rest}>
       <Box sx={aiHeaderSx}>
         <AutoAwesome sx={{ fontSize: "1.1rem", color: "secondary.main" }} />
         <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", flexGrow: 1 }}>{title}</Typography>
+        {loading && <CircularProgress size={14} color="secondary" sx={{ mr: 1 }} />}
         <Chip label="AI generated" size="small" color="secondary" variant="outlined" sx={{ height: 22, fontSize: "0.7rem" }} />
       </Box>
 
       <Box sx={aiBodySx}>
-        {loading && (
+        {loading && !hasContent && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 2, color: "text.secondary" }}>
             <CircularProgress size={18} color="secondary" />
             <Typography variant="body2">Analyzing ticket and generating suggestions…</Typography>
@@ -44,7 +47,11 @@ export default function AIPanel({ title = "AI Assistant", loading, error, childr
           </Typography>
         )}
 
-        {!loading && !error && children}
+        {hasContent && (
+          <Box sx={{ opacity: loading ? 0.6 : 1, transition: "opacity 0.2s", pointerEvents: loading ? "none" : "auto" }}>
+            {children}
+          </Box>
+        )}
       </Box>
     </Box>
   )

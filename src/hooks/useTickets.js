@@ -1,13 +1,4 @@
-/**
- * useTickets  — Ticket list management hook
- * useTicketDetail — Single-ticket detail + all sub-resource operations
- *
- * Usage (list):
- *   const { tickets, total, loading, fetch, createTicket } = useTickets()
- *
- * Usage (detail):
- *   const { ticket, loading, updateStatus, assign, addComment, ... } = useTicketDetail(ticketId)
- */
+
 
 import { useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"

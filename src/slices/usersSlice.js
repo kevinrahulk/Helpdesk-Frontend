@@ -1,16 +1,3 @@
-/**
- * usersSlice — User & Agent management (Admin only)
- *
- * Covers:
- *   GET    /users                  → fetchUsers
- *   POST   /users                  → createEmployee
- *   POST   /agents                 → createAgent
- *   GET    /users/:id              → fetchUserById
- *   PUT    /users/:id              → updateUser
- *   PATCH  /users/:id/status       → updateUserStatus
- *   GET    /agents                 → fetchAgents (with workload counts)
- */
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"
 

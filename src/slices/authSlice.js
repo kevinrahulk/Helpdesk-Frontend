@@ -1,14 +1,4 @@
-/**
- * authSlice — Authentication state
- *
- * Handles:
- *   POST /auth/login      → login thunk
- *   POST /auth/logout     → logout thunk
- *   GET  /auth/profile    → fetchProfile thunk
- *
- * Persists { access_token, user } to localStorage under "helpdesk-auth"
- * so the session survives page refreshes.
- */
+
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"

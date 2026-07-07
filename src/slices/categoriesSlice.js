@@ -1,13 +1,4 @@
-/**
- * categoriesSlice — Ticket category management
- *
- * Covers:
- *   GET    /categories         → fetchCategories  (all authenticated users)
- *   POST   /categories         → createCategory   (admin)
- *   GET    /categories/:id     → fetchCategoryById
- *   PUT    /categories/:id     → updateCategory   (admin)
- *   DELETE /categories/:id     → deactivateCategory (soft-delete, admin)
- */
+
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"

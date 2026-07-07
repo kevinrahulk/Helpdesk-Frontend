@@ -6,11 +6,7 @@ import Avatar from "../../components/Avatar/Avatar"
 import { StatusBadge, PriorityBadge } from "../../components/StatusBadge/StatusBadge"
 import { formatDate, timeFromNow, isOverdue } from "../../utils/format"
 
-/**
- * Column factory for the tickets DataTable.
- * Backend response shape: ticket.requester, ticket.assignee as nested objects,
- * or top-level created_by / assigned_to if the API returns flat format.
- */
+
 export function buildTicketColumns({ showRequester = true, showAssignee = true } = {}) {
   const columns = [
     {

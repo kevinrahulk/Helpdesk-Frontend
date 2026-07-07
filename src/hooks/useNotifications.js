@@ -1,9 +1,3 @@
-/**
- * useNotifications — Notification management hook
- *
- * Usage:
- *   const { notifications, unreadCount, loading, fetchAll, markRead, markAllRead } = useNotifications()
- */
 
 import { useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"

@@ -1,9 +1,4 @@
-/**
- * useCategories — Ticket category management hook
- * useDashboard  — Role-scoped dashboard hook
- * useReports    — Admin analytics hooks
- * useAI         — AI suggestion & summary hook
- */
+
 
 import { useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"

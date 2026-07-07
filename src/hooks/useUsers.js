@@ -1,9 +1,3 @@
-/**
- * useUsers — User management hook (Admin only)
- *
- * Usage:
- *   const { users, agents, loading, fetchUsers, createEmployee, createAgent, ... } = useUsers()
- */
 
 import { useCallback } from "react"
 import { useDispatch, useSelector } from "react-redux"

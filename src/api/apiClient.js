@@ -1,10 +1,3 @@
-/**
- * Axios API client — pre-configured for the AI Helpdesk backend.
- * Base URL defaults to http://localhost:8000 (override via VITE_API_URL).
- * Automatically attaches the JWT from localStorage on every request.
- * On 401, clears auth and redirects to /login.
- */
-
 import axios from "axios"
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
@@ -12,13 +5,6 @@ const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
 // Default timeout for regular CRUD calls.
 const DEFAULT_TIMEOUT_MS = 15_000
 
-// AI routes (/ai/*) run a multi-node LangGraph workflow on the backend —
-// several sequential LLM calls (intent → category/priority/summary →
-// first-fix → similar tickets → confidence), each with its own
-// AI_REQUEST_TIMEOUT_SECONDS (20s) budget plus retries, so the worst-case
-// end-to-end latency is well above the default 15s CRUD timeout. Give
-// these calls a much longer runway rather than failing them client-side
-// while the backend is still legitimately working.
 const AI_TIMEOUT_MS = 60_000
 
 const apiClient = axios.create({

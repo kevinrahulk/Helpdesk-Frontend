@@ -1,11 +1,3 @@
-/**
- * aiSlice — AI Assistant integration
- *
- * Covers:
- *   POST /ai/ticket-suggestion      → getTicketSuggestion  (employee, before creating ticket)
- *   GET  /ai/tickets/:id/summary    → getTicketSummary     (agent/admin, per-ticket AI panel)
- */
-
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"
 

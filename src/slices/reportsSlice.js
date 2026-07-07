@@ -1,16 +1,4 @@
-/**
- * reportsSlice — Admin reporting & analytics
- *
- * Covers:
- *   GET /reports/summary              → fetchReportSummary
- *   GET /reports/agent-performance    → fetchAgentPerformance
- *   GET /reports/sla                  → fetchSLACompliance
- *   GET /reports/ticket-volume        → fetchTicketVolume
- *   GET /reports/category-distribution → fetchCategoryDistribution
- *   GET /reports/priority-distribution → fetchPriorityDistribution
- *   GET /reports/employee-activity     → fetchEmployeeActivity
- *   GET /reports/export                → exportReport
- */
+
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"

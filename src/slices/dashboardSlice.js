@@ -1,21 +1,9 @@
-/**
- * dashboardSlice — Role-scoped dashboard statistics
- *
- * GET /dashboard → returns different shapes per role:
- *   Employee  → EmployeeDashboard { open_tickets, closed_tickets, recent_tickets }
- *   Agent     → AgentDashboard    { assigned_open, assigned_in_progress, assigned_waiting, sla_breached, recently_assigned }
- *   Admin     → AdminDashboard    { total_tickets, open_tickets, closed_tickets, overdue_tickets, unassigned_tickets, agent_workload, recent_tickets }
- */
+
 
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
 import apiClient from "../api/apiClient"
 
 // ── Async thunks ──────────────────────────────────────────────────────────
-
-/**
- * Fetch the dashboard payload for the currently authenticated user.
- * The backend determines the correct shape based on the JWT role.
- */
 export const fetchDashboard = createAsyncThunk(
   "dashboard/fetchDashboard",
   async (_, { rejectWithValue }) => {

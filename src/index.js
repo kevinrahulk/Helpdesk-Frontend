@@ -1,20 +1,4 @@
-/**
- * Redux — Central export barrel
- *
- * Import everything from this single entry point:
- *   import { useAuth, useTickets, useTicketDetail, store } from "@/redux"
- *   import { login, fetchTickets } from "@/redux"
- *
- * Hooks:
- *   useAuth         — login, logout, profile, role helpers
- *   useTickets      — ticket list + create
- *   useTicketDetail — single ticket + comments/attachments/logs/status/assign
- *   useUsers        — user management (admin)
- *   useCategories   — category CRUD
- *   useDashboard    — role-scoped dashboard stats
- *   useReports      — admin analytics
- *   useAI           — AI suggestion + ticket summary panel
- */
+
 
 // ── Store ────────────────────────────────────────────────────────────────────
 export { default as store } from "./store/store"
