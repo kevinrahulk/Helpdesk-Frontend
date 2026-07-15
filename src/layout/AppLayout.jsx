@@ -29,13 +29,13 @@ export default function AppLayout() {
       if (isClosed) return
 
       // Derive ws:// or wss:// base URL from api base URL
-      const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
+      const apiBaseUrl = import.meta.env.VITE_API_URL
       const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:"
       let wsBase = apiBaseUrl.replace(/^https?:/, wsProtocol)
-      
+
       const wsUrl = `${wsBase}/ws?token=${accessToken}`
       console.log("[WebSocket] Connecting to:", wsUrl)
-      
+
       socket = new WebSocket(wsUrl)
 
       socket.onopen = () => {

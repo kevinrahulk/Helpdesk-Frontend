@@ -6,6 +6,7 @@ export const navItems = [
   { key: "tickets", label: "Tickets", path: "/tickets", icon: "tickets", roles: ["employee", "agent", "admin"] },
   { key: "users", label: "User Management", path: "/users", icon: "users", roles: ["admin"] },
   { key: "reports", label: "Reports", path: "/reports", icon: "reports", roles: ["admin"] },
+  { key: "observability", label: "LLM Observability", path: "/observability", icon: "observability", roles: ["admin"] },
 ]
 
 export function navItemsForRole(role) {

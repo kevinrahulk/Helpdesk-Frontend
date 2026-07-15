@@ -12,6 +12,7 @@ import {
   GroupOutlined,
   InsightsOutlined,
   SupportAgent,
+  Troubleshoot,
 } from "@mui/icons-material"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAuth } from "../../hooks/useAuth"
@@ -26,6 +27,7 @@ const iconMap = {
   tickets: ConfirmationNumberOutlined,
   users: GroupOutlined,
   reports: InsightsOutlined,
+  observability: Troubleshoot,
 }
 
 function SidebarContent({ onNavigate }) {

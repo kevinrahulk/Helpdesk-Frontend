@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000"
+const BASE_URL = import.meta.env.VITE_API_URL
 
 // Default timeout for regular CRUD calls.
 const DEFAULT_TIMEOUT_MS = 15_000

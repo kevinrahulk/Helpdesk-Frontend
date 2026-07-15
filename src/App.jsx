@@ -9,6 +9,7 @@ import TicketDetails from "./pages/Tickets/TicketDetails"
 import CreateTicket from "./pages/Tickets/CreateTicket"
 import UserManagement from "./pages/UserManagement/UserManagement"
 import Reports from "./pages/Reports/Reports"
+import Observability from "./pages/Observability/Observability"
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -47,6 +48,14 @@ export const router = createBrowserRouter(
           element={
             <ProtectedRoute allow={["admin"]}>
               <Reports />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/observability"
+          element={
+            <ProtectedRoute allow={["admin"]}>
+              <Observability />
             </ProtectedRoute>
           }
         />
